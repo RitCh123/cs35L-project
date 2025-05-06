@@ -1,6 +1,6 @@
 import React from "react";
 
-// Import bulk dependencies based on need 
+// Import bulk dependencies based on need
 
 import {
   Card,
@@ -13,9 +13,15 @@ import {
   useDisclosure,
 } from "@heroui/react";
 
+import { Chip } from "@heroui/react";
+
 import { Button, ButtonGroup } from "@heroui/button";
 
 import { Spacer } from "@heroui/spacer";
+
+import { Navbar, NavbarBrand, NavbarContent, NavbarItem } from "@heroui/react";
+
+import { Link } from "@heroui/react";
 
 import {
   Table,
@@ -29,8 +35,7 @@ import {
 import CustomModal from "./components/CustomModal";
 
 export default function App() {
-
-  const {isOpen, onOpen, onOpenChange} = useDisclosure();
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
   const data = [
     {
@@ -38,79 +43,167 @@ export default function App() {
       names: ["Dibyesh Ganguly", "Madhavenshu Dayal", "Rithvik Chavali"],
       startTime: "0800",
       endTime: "0900",
+      priority: 1,
     },
     {
       primaryReservation: "Dibyesh Ganguly",
       names: ["Dibyesh Ganguly", "Madhavenshu Dayal", "Rithvik Chavali"],
       startTime: "1000",
       endTime: "1100",
+      priority: 2,
     },
     {
       primaryReservation: "Dibyesh Ganguly",
       names: ["Dibyesh Ganguly", "Madhavenshu Dayal", "Rithvik Chavali"],
       startTime: "1200",
       endTime: "1300",
+      priority: 3,
     },
     {
       primaryReservation: "Dibyesh Ganguly",
       names: ["Dibyesh Ganguly", "Madhavenshu Dayal", "Rithvik Chavali"],
-      startTime: "1400",
-      endTime: "1500",
+      priority: 4,
     },
     {
       primaryReservation: "Dibyesh Ganguly",
       names: ["Dibyesh Ganguly", "Madhavenshu Dayal", "Rithvik Chavali"],
-      startTime: "1600",
-      endTime: "1700",
+      priority: 5,
     },
   ];
-
-  function convertMilitaryToStandardTime(militaryTime) {
-    const hours = parseInt(militaryTime.slice(0, 2));
-    const minutes = parseInt(militaryTime.slice(2, 4));
-    let period = hours >= 12 ? "PM" : "AM";
-    let standardHours = hours % 12;
-    standardHours = standardHours ? standardHours : 12;
-    const paddedMinutes = String(minutes).padStart(2, "0");
-    return `${standardHours}:${paddedMinutes} ${period}`;
-  }
 
   return (
     <>
       <HeroUIProvider>
-        <div className="App" style={{ padding: "20px", width: "50%" }}>
-          <Table aria-label="Table with row dividers" className="max-w-md">
-            <TableHeader>
-              <TableColumn>QUEUE (CONSOLE)</TableColumn>
-            </TableHeader>
-            <TableBody>
-              {data.map((item, index) => (
-                <>
-                  <TableRow key={index}>
-                    <TableCell>
-                      <h2 className="text-bold">
-                        <strong>
-                          {convertMilitaryToStandardTime(item.startTime)}
-                        </strong>
-                      </h2>
-                      <Spacer y={2} />
-                      <Card>
-                        <CardBody>
-                          <p className="text-lg">{item.primaryReservation}</p>
-                        </CardBody>
-                      </Card>
-                      <Spacer y={2} />
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell colSpan={1} className="h-auto py-0">
-                      <Divider className="my-0" />
-                    </TableCell>
-                  </TableRow>
-                </>
-              ))}
-            </TableBody>
-          </Table>
+        <nav className="w-full flex items-center justify-between p-4 bg-white">
+          <div className="text-xl font-bold">
+            <strong>Game Reservation</strong>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              style={{
+                backgroundImage:
+                  "linear-gradient(to top right, #ec4899, #facc15)", // pink-500 to yellow-500
+                color: "white",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              }}
+              as={Link}
+              href="/login"
+            >
+              Sign In
+            </Button>
+            <Button
+              style={{
+                backgroundImage:
+                  "linear-gradient(to top right, #ef4444, #f97316)", // red-500 to orange-500
+                color: "white",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              }}
+              as={Link}
+              href="/login"
+            >
+              Log In
+            </Button>
+          </div>
+        </nav>
+        <div style={{display: "flex", justifyContent: "space-around"}}>
+          <div className="App" style={{ padding: "20px", width: "50%" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-start",
+                alignItems: "center",
+                flexDirection: "row",
+                gap: "10px",
+              }}
+            >
+              <Chip color="primary" size="lg">
+                Average Time: 8 minutes
+              </Chip>
+              <Chip color="secondary" size="lg">
+                Consoles Available: 2
+              </Chip>
+            </div>
+            <Spacer y={2} />
+            <Table aria-label="Table with row dividers" className="max-w-md">
+              <TableHeader>
+                <TableColumn>QUEUE (CONSOLE)</TableColumn>
+              </TableHeader>
+              <TableBody>
+                {data.map((item, index) => (
+                  <>
+                    <TableRow key={index}>
+                      <TableCell>
+                        <h2 className="text-bold">
+                          <strong>Priority #{item.priority}</strong>
+                        </h2>
+                        <Spacer y={2} />
+                        <Card>
+                          <CardBody>
+                            <p className="text-lg">{item.primaryReservation}</p>
+                          </CardBody>
+                        </Card>
+                        <Spacer y={2} />
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell colSpan={1} className="h-auto py-0">
+                        <Divider className="my-0" />
+                      </TableCell>
+                    </TableRow>
+                  </>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="App" style={{ padding: "20px", width: "50%" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-start",
+                alignItems: "center",
+                flexDirection: "row",
+                gap: "10px",
+              }}
+            >
+              <Chip color="primary" size="lg">
+                Average Time: 8 minutes
+              </Chip>
+              <Chip color="secondary" size="lg">
+                PCs Available: 2
+              </Chip>
+            </div>
+            <Spacer y={2} />
+            <Table aria-label="Table with row dividers" className="max-w-md">
+              <TableHeader>
+                <TableColumn>QUEUE (PC)</TableColumn>
+              </TableHeader>
+              <TableBody>
+                {data.map((item, index) => (
+                  <>
+                    <TableRow key={index}>
+                      <TableCell>
+                        <h2 className="text-bold">
+                          <strong>Priority #{item.priority}</strong>
+                        </h2>
+                        <Spacer y={2} />
+                        <Card>
+                          <CardBody>
+                            <p className="text-lg">{item.primaryReservation}</p>
+                          </CardBody>
+                        </Card>
+                        <Spacer y={2} />
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell colSpan={1} className="h-auto py-0">
+                        <Divider className="my-0" />
+                      </TableCell>
+                    </TableRow>
+                  </>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
         <Button
           style={{
@@ -125,7 +218,8 @@ export default function App() {
             alignItems: "center",
             fontSize: "24px",
             backgroundColor: "#ff5e5e",
-          }} isIconOnly
+          }}
+          isIconOnly
           onPress={onOpen}
         >
           <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
@@ -137,7 +231,11 @@ export default function App() {
             />
           </svg>
         </Button>
-        <CustomModal isOpen={isOpen} placement="top-center" onOpenChange={onOpenChange} />
+        <CustomModal
+          isOpen={isOpen}
+          placement="top-center"
+          onOpenChange={onOpenChange}
+        />
       </HeroUIProvider>
     </>
   );
