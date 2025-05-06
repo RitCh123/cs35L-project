@@ -1,4 +1,7 @@
 import React from "react";
+
+// Import bulk dependencies based on need 
+
 import {
   Card,
   CardBody,
@@ -7,8 +10,11 @@ import {
   CardFooter,
   CardHeader,
   Image,
+  useDisclosure,
 } from "@heroui/react";
+
 import { Button, ButtonGroup } from "@heroui/button";
+
 import { Spacer } from "@heroui/spacer";
 
 import {
@@ -20,7 +26,12 @@ import {
   TableCell,
 } from "@heroui/table";
 
+import CustomModal from "./components/CustomModal";
+
 export default function App() {
+
+  const {isOpen, onOpen, onOpenChange} = useDisclosure();
+
   const data = [
     {
       primaryReservation: "Dibyesh Ganguly",
@@ -70,7 +81,7 @@ export default function App() {
         <div className="App" style={{ padding: "20px", width: "50%" }}>
           <Table aria-label="Table with row dividers" className="max-w-md">
             <TableHeader>
-              <TableColumn>QUEUE (CONSOLE 1)</TableColumn>
+              <TableColumn>QUEUE (CONSOLE)</TableColumn>
             </TableHeader>
             <TableBody>
               {data.map((item, index) => (
@@ -115,16 +126,18 @@ export default function App() {
             fontSize: "24px",
             backgroundColor: "#ff5e5e",
           }} isIconOnly
+          onPress={onOpen}
         >
           <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
             <path
               d="M10 4v12M4 10h12"
-              stroke="currentColor"
+              stroke="white"
               strokeWidth="2"
               strokeLinecap="round"
             />
           </svg>
         </Button>
+        <CustomModal isOpen={isOpen} placement="top-center" onOpenChange={onOpenChange} />
       </HeroUIProvider>
     </>
   );
