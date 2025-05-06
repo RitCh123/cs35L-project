@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
+import Login from './Login';
 import reportWebVitals from './reportWebVitals';
 import {
   createBrowserRouter,
@@ -13,6 +14,10 @@ const router = createBrowserRouter([
     path: "/",
     element: <App />,
   },
+  {
+    path: "/login",
+    element: <Login />,
+  }
 ]);
 
 const root = document.getElementById("root");

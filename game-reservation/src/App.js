@@ -81,7 +81,7 @@ export default function App() {
         <div className="App" style={{ padding: "20px", width: "50%" }}>
           <Table aria-label="Table with row dividers" className="max-w-md">
             <TableHeader>
-              <TableColumn>QUEUE (CONSOLE 1)</TableColumn>
+              <TableColumn>QUEUE (CONSOLE)</TableColumn>
             </TableHeader>
             <TableBody>
               {data.map((item, index) => (
@@ -131,7 +131,7 @@ export default function App() {
           <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
             <path
               d="M10 4v12M4 10h12"
-              stroke="currentColor"
+              stroke="white"
               strokeWidth="2"
               strokeLinecap="round"
             />
