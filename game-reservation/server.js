@@ -1,10 +1,19 @@
 const { MongoClient } = require('mongodb');
+const express = require('express');
+const cors = require('cors');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
 
 // Connection URI
-const uri = "mongodb+srv://nks676:0O4ta2EwGOu9m6PM@eggert.a6kxlho.mongodb.net/?retryWrites=true&w=majority&appName=Eggert";
+const uri = "mongodb+srv://nks676:eggertfinalproject1977@eggert.a6kxlho.mongodb.net/?retryWrites=true&w=majority&appName=Eggert";
 
 // Create a new MongoClient
 const client = new MongoClient(uri);
+
+// Database Name
+const dbName = 'eclipse_gaming';
 
 async function connectToDatabase() {
     try {
@@ -12,17 +21,52 @@ async function connectToDatabase() {
         await client.connect();
         console.log("Connected successfully to MongoDB");
 
-        // Test the connection by listing all databases
-        const adminDb = client.db("admin");
-        const databases = await adminDb.admin().listDatabases();
-        console.log("Available databases:", databases.databases.map(db => db.name));
+        const db = client.db(dbName);
+
+        // Create collections if they don't exist
+        await db.createCollection('users');
+        await db.createCollection('reservations');
+        await db.createCollection('games');
+        await db.createCollection('queue');
+
+        console.log("Database setup completed");
+        return db;
 
     } catch (err) {
         console.error("Error connecting to MongoDB:", err);
-    } finally {
-        // Ensure the client will close when you finish/error
-        await client.close();
+        throw err;
     }
 }
 
-connectToDatabase(); 
+// Basic test route
+app.get('/', (req, res) => {
+    res.send('Server is running!');
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'healthy', timestamp: new Date() });
+});
+
+// Start the server
+const port = 8080;
+
+async function startServer() {
+    try {
+        const db = await connectToDatabase();
+        
+        // Start listening
+        app.listen(port, () => {
+            console.log(`Server running at http://localhost:${port}`);
+            console.log(`Test the API with:
+            - Basic test: curl http://localhost:${port}/
+            - Health check: curl http://localhost:${port}/api/health`);
+        });
+
+    } catch (err) {
+        console.error("Failed to start server:", err);
+        process.exit(1);
+    }
+}
+
+startServer(); 
