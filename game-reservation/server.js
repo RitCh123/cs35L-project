@@ -7,7 +7,7 @@ app.use(cors());
 app.use(express.json());
 
 // Connection URI
-const uri = "mongodb+srv://nks676:0O4ta2EwGOu9m6PM@eggert.a6kxlho.mongodb.net/?retryWrites=true&w=majority&appName=Eggert";
+const uri = "mongodb+srv://nks676:eggertfinalproject1977@eggert.a6kxlho.mongodb.net/?retryWrites=true&w=majority&appName=Eggert";
 
 // Create a new MongoClient
 const client = new MongoClient(uri);
