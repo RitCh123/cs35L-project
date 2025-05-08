@@ -1,3 +1,5 @@
+import React, { useState } from "react";
+
 import {
   Modal,
   ModalContent,
@@ -14,6 +16,8 @@ import {
 import { Autocomplete, AutocompleteItem } from "@heroui/react";
 
 import { Select, SelectItem } from "@heroui/react";
+
+import axios from "axios";
 
 export const MailIcon = (props) => {
   return (
@@ -57,7 +61,24 @@ export default function CustomModal({ isOpen, onOpen, onOpenChange }) {
     { key: "FORTNITE", label: "Fortnite" },
     { key: "VALORANT", label: "Valorant" },
     { key: "LEAGUE", label: "League of Legends" },
-  ]
+  ];
+
+  const [selectedGame, setSelectedGame] = useState(null);
+  const [selectedMode, setSelectedMode] = useState(null);
+  const [selectedName, setSelectedName] = useState("");
+
+  const sendRequest = async (data) => {
+    alert("Sending request to server...");
+    try {
+      const response = await axios.post(
+        "http://localhost:8080/api/create/reservation",
+        data
+      );
+      console.log("Reservation created:", response.data);
+    } catch (error) {
+      console.error("Error creating reservation:", error);
+    }
+  };
 
   return (
     <>
@@ -76,11 +97,15 @@ export default function CustomModal({ isOpen, onOpen, onOpenChange }) {
                   label="Primary (Full) Name"
                   placeholder="Enter the primary name for the reservation"
                   variant="bordered"
+                  onChange={(e) => setSelectedName(e.target.value)}
                 />
                 <Select
                   className="max-w-base"
                   label="Mode of play"
                   placeholder="Select your mode of play"
+                  onChange={(e) => {
+                    setSelectedMode(e.target.value);
+                  }}
                 >
                   {modes.map((mode) => (
                     <SelectItem key={mode.key}>{mode.label}</SelectItem>
@@ -91,6 +116,9 @@ export default function CustomModal({ isOpen, onOpen, onOpenChange }) {
                   defaultItems={games}
                   label="Game"
                   placeholder="Search for a game"
+                  onInputChange={(e) => {
+                    setSelectedGame(e);
+                  }}  
                 >
                   {(game) => (
                     <AutocompleteItem key={game.key}>
@@ -103,7 +131,17 @@ export default function CustomModal({ isOpen, onOpen, onOpenChange }) {
                 <Button color="danger" variant="flat" onPress={onClose}>
                   Close
                 </Button>
-                <Button color="success" onPress={onClose}>
+                <Button
+                  color="success"
+                  onPress={() => {
+                    sendRequest({
+                      name: selectedName,
+                      mode: selectedMode,
+                      game: selectedGame,
+                    });
+                    onClose();
+                  }}
+                >
                   Create
                 </Button>
               </ModalFooter>

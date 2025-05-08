@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 // Import bulk dependencies based on need
 
@@ -23,6 +23,8 @@ import { Navbar, NavbarBrand, NavbarContent, NavbarItem } from "@heroui/react";
 
 import { Link } from "@heroui/react";
 
+import axios from "axios";
+
 import {
   Table,
   TableHeader,
@@ -37,39 +39,27 @@ import CustomModal from "./components/CustomModal";
 export default function App() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
-  const data = [
-    {
-      primaryReservation: "Dibyesh Ganguly",
-      names: ["Dibyesh Ganguly", "Madhavenshu Dayal", "Rithvik Chavali"],
-      startTime: "0800",
-      endTime: "0900",
-      priority: 1,
-    },
-    {
-      primaryReservation: "Dibyesh Ganguly",
-      names: ["Dibyesh Ganguly", "Madhavenshu Dayal", "Rithvik Chavali"],
-      startTime: "1000",
-      endTime: "1100",
-      priority: 2,
-    },
-    {
-      primaryReservation: "Dibyesh Ganguly",
-      names: ["Dibyesh Ganguly", "Madhavenshu Dayal", "Rithvik Chavali"],
-      startTime: "1200",
-      endTime: "1300",
-      priority: 3,
-    },
-    {
-      primaryReservation: "Dibyesh Ganguly",
-      names: ["Dibyesh Ganguly", "Madhavenshu Dayal", "Rithvik Chavali"],
-      priority: 4,
-    },
-    {
-      primaryReservation: "Dibyesh Ganguly",
-      names: ["Dibyesh Ganguly", "Madhavenshu Dayal", "Rithvik Chavali"],
-      priority: 5,
-    },
-  ];
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    axios.get("http://localhost:8080/api/view/reservations")
+      .then((response) => response)
+      .then((data) => {
+        setData(data.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+      });
+  }, []);
+
+  let priority = 1;
+  console.log(data)
+  if (data) {
+    data.map((item) => {
+      item["priority"] = priority;
+      priority++;
+    });
+  }
 
   return (
     <>
@@ -105,7 +95,7 @@ export default function App() {
             </Button>
           </div>
         </nav>
-        <div style={{display: "flex", justifyContent: "space-around"}}>
+        <div style={{ display: "flex", justifyContent: "space-around" }}>
           <div className="App" style={{ padding: "20px", width: "50%" }}>
             <div
               style={{
@@ -139,7 +129,7 @@ export default function App() {
                         <Spacer y={2} />
                         <Card>
                           <CardBody>
-                            <p className="text-lg">{item.primaryReservation}</p>
+                            <p className="text-lg">{item.name}</p>
                           </CardBody>
                         </Card>
                         <Spacer y={2} />
@@ -169,7 +159,7 @@ export default function App() {
                 Average Time: 8 minutes
               </Chip>
               <Chip color="secondary" size="lg">
-                PCs Available: 2
+                PCs Available: 25
               </Chip>
             </div>
             <Spacer y={2} />
@@ -188,7 +178,7 @@ export default function App() {
                         <Spacer y={2} />
                         <Card>
                           <CardBody>
-                            <p className="text-lg">{item.primaryReservation}</p>
+                            <p className="text-lg">{item.name}</p>
                           </CardBody>
                         </Card>
                         <Spacer y={2} />
