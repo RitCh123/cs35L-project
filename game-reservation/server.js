@@ -1,13 +1,15 @@
 const { MongoClient } = require('mongodb');
 const express = require('express');
 const cors = require('cors');
+require('dotenv').config();
+
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 // Connection URI
-const uri = "mongodb+srv://nks676:eggertfinalproject1977@eggert.a6kxlho.mongodb.net/?retryWrites=true&w=majority&appName=Eggert";
+const uri = `mongodb+srv://nks676:${process.env.DB_PASSWORD}@eggert.a6kxlho.mongodb.net/?retryWrites=true&w=majority&appName=Eggert`;
 
 // Create a new MongoClient
 const client = new MongoClient(uri);
