@@ -1,19 +1,33 @@
 import { Button } from "@heroui/react";
 import { Divider } from "@heroui/divider";
-
 import { FcGoogle } from "react-icons/fc";
+import { useAuth } from "./firebase/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
-export const GoogleIcon = ({
-  fill = "currentColor",
-  size,
-  height,
-  width,
-  ...props
-}) => {
+export const GoogleIcon = () => {
   return <FcGoogle className="h-5 w-5" />;
 };
 
-export default function App() {
+export default function Login() {
+  const { googleSignIn } = useAuth();
+  const navigate = useNavigate();
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleGoogleSignIn() {
+    try {
+      setError("");
+      setLoading(true);
+      await googleSignIn();
+      navigate("/"); // Redirect to home page after successful login
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div
       className="flex gap-4 items-center"
@@ -26,7 +40,8 @@ export default function App() {
       }}
     >
       <h1 className="text-xl font-bold"><strong>Sign into Game Reservation</strong></h1>
-      <p>Choose one of the sign in options and log in. Only available for UCLA students (must register using a UCLA student email address).</p>
+      <p>Sign in with your UCLA email address (@ucla.edu or @g.ucla.edu) to access the game reservation system.</p>
+      {error && <p className="text-red-500">{error}</p>}
       <Divider className="my-4" />
       <Button
         className="w-full"
@@ -34,8 +49,10 @@ export default function App() {
         startContent={<GoogleIcon />}
         variant="bordered"
         style={{ width: "25%", alignItems: "center", justifyContent: "center" }}
+        onClick={handleGoogleSignIn}
+        disabled={loading}
       >
-        Sign in with Google
+        {loading ? "Signing in..." : "Sign in with Google"}
       </Button>
     </div>
   );

@@ -15,6 +15,11 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
+// Helper function to check if email is from UCLA
+function isUCLAEmail(email) {
+  return email.endsWith('@ucla.edu') || email.endsWith('@g.ucla.edu');
+}
+
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,14 +36,35 @@ export function AuthProvider({ children }) {
     return signOut(auth);
   }
 
-  function googleSignIn() {
+  async function googleSignIn() {
     const provider = new GoogleAuthProvider();
-    return signInWithPopup(auth, provider);
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const email = result.user.email;
+      
+      // Check if the email is from UCLA
+      if (!isUCLAEmail(email)) {
+        // If not a UCLA email, sign them out
+        await logout();
+        throw new Error('Only UCLA email addresses (@ucla.edu or @g.ucla.edu) are allowed to sign in.');
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      throw error;
+    }
   }
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+      if (user && !isUCLAEmail(user.email)) {
+        // If somehow a non-UCLA user is authenticated, sign them out
+        logout();
+        setCurrentUser(null);
+      } else {
+        setCurrentUser(user);
+      }
       setLoading(false);
     });
 
