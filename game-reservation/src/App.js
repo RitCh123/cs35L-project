@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useAuth } from "./firebase/AuthContext";
 
 // Import bulk dependencies based on need
 
@@ -36,9 +37,9 @@ import {
 
 import CustomModal from "./components/CustomModal";
 
-export default function App() {
+function AppContent() {
+  const { currentUser, logout } = useAuth();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-
   const [data, setData] = useState([]);
 
   useEffect(() => {
@@ -69,30 +70,46 @@ export default function App() {
             <strong>Game Reservation</strong>
           </div>
           <div className="flex gap-2">
-            <Button
-              style={{
-                backgroundImage:
-                  "linear-gradient(to top right, #ec4899, #facc15)", // pink-500 to yellow-500
-                color: "white",
-                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-              }}
-              as={Link}
-              href="/login"
-            >
-              Sign In
-            </Button>
-            <Button
-              style={{
-                backgroundImage:
-                  "linear-gradient(to top right, #ef4444, #f97316)", // red-500 to orange-500
-                color: "white",
-                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-              }}
-              as={Link}
-              href="/login"
-            >
-              Log In
-            </Button>
+            {currentUser ? (
+              <>
+                <span className="text-gray-600">Welcome, {currentUser.email}</span>
+                <Button
+                  style={{
+                    backgroundImage: "linear-gradient(to top right, #ef4444, #f97316)",
+                    color: "white",
+                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                  }}
+                  onClick={logout}
+                >
+                  Log Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  style={{
+                    backgroundImage: "linear-gradient(to top right, #ec4899, #facc15)",
+                    color: "white",
+                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                  }}
+                  as={Link}
+                  href="/signup"
+                >
+                  Sign Up
+                </Button>
+                <Button
+                  style={{
+                    backgroundImage: "linear-gradient(to top right, #ef4444, #f97316)",
+                    color: "white",
+                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                  }}
+                  as={Link}
+                  href="/login"
+                >
+                  Log In
+                </Button>
+              </>
+            )}
           </div>
         </nav>
         <div style={{ display: "flex", justifyContent: "space-around" }}>
@@ -229,4 +246,8 @@ export default function App() {
       </HeroUIProvider>
     </>
   );
+}
+
+export default function App() {
+  return <AppContent />;
 }
