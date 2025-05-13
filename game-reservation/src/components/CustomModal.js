@@ -68,7 +68,6 @@ export default function CustomModal({ isOpen, onOpen, onOpenChange }) {
   const [selectedName, setSelectedName] = useState("");
 
   const sendRequest = async (data) => {
-    alert("Sending request to server...");
     try {
       const response = await axios.post(
         "http://localhost:8080/api/create/reservation",
