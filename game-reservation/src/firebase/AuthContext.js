@@ -20,8 +20,18 @@ function isUCLAEmail(email) {
   return email.endsWith('@ucla.edu') || email.endsWith('@g.ucla.edu');
 }
 
+// Helper function to check if user is admin
+function isAdmin(email) {
+  const adminEmails = [
+    'rchavali@g.ucla.edu'
+    // 'nks676@g.ucla.edu'
+  ];
+  return adminEmails.includes(email);
+}
+
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
+  const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
   function signup(email, password) {
@@ -48,6 +58,10 @@ export function AuthProvider({ children }) {
         await logout();
         throw new Error('Only UCLA email addresses (@ucla.edu or @g.ucla.edu) are allowed to sign in.');
       }
+
+      // Set user role based on email
+      const role = isAdmin(email) ? 'ADMIN' : 'USER';
+      setUserRole(role);
       
       return result;
     } catch (error) {
@@ -62,8 +76,14 @@ export function AuthProvider({ children }) {
         // If somehow a non-UCLA user is authenticated, sign them out
         logout();
         setCurrentUser(null);
+        setUserRole(null);
       } else {
         setCurrentUser(user);
+        if (user) {
+          setUserRole(isAdmin(user.email) ? 'ADMIN' : 'USER');
+        } else {
+          setUserRole(null);
+        }
       }
       setLoading(false);
     });
@@ -73,6 +93,7 @@ export function AuthProvider({ children }) {
 
   const value = {
     currentUser,
+    userRole,
     signup,
     login,
     logout,

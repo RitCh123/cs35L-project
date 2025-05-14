@@ -38,7 +38,7 @@ import {
 import CustomModal from "./components/CustomModal";
 
 function AppContent() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, userRole } = useAuth();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [data, setData] = useState([]);
 
@@ -72,7 +72,7 @@ function AppContent() {
           <div className="flex gap-2">
             {currentUser ? (
               <>
-                <span className="text-gray-600">Welcome, {currentUser.email}</span>
+                <span className="text-gray-600">Welcome, {userRole}</span>
                 <Button
                   style={{
                     backgroundImage: "linear-gradient(to top right, #ef4444, #f97316)",
