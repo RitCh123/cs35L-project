@@ -1,57 +1,40 @@
-import React, { useEffect, useState } from "react";
-import { useAuth } from "./firebase/AuthContext";
-
-import { Avatar, AvatarIcon } from "@heroui/react";
-
-import { useNavigate }  from "react-router-dom";
-
-// Import bulk dependencies based on need
+import React from "react";
 
 import {
-  Card,
-  CardBody,
   HeroUIProvider,
-  Divider,
-  CardFooter,
-  CardHeader,
-  Image,
-  useDisclosure,
-} from "@heroui/react";
-
-import { Chip } from "@heroui/react";
-
-import { Button, ButtonGroup } from "@heroui/button";
-
-import { Spacer } from "@heroui/spacer";
-
-import { Navbar, NavbarBrand, NavbarContent, NavbarItem } from "@heroui/react";
-
-import { Link } from "@heroui/react";
-
-import axios from "axios";
-
-
-import {
+  Button,
+  Link,
   Table,
   TableHeader,
   TableColumn,
-  TableBody,
-  TableRow,
   TableCell,
-} from "@heroui/table";
-
+  Chip,
+  Spacer,
+  TableRow,
+  TableBody,
+  Card,
+  CardBody,
+  Divider,
+  Avatar
+} from "@heroui/react";
 import CustomModal from "./components/CustomModal";
 
-function AppContent() {
-  const navigate = useNavigate();
+import { useAuth } from "./firebase/AuthContext";
+
+import { useState } from "react";
+import { useDisclosure } from "@heroui/react";
+import { useEffect } from "react";
+import axios from "axios";
+
+export default function Admin() {
   const { currentUser, logout, userRole } = useAuth();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [data, setData] = useState([]);
   const [selectedConsole, setSelectedConsole] = useState("All");
   const consoleTypes = ["All", "Switch", "Xbox", "PS5"];
-
   const fetchReservations = () => {
-    axios.get("http://localhost:8080/api/view/reservations")
+    axios
+      .get("http://localhost:8080/api/view/reservations")
       .then((response) => setData(response.data))
       .catch((error) => {
         console.error("Error fetching data:", error);
@@ -59,9 +42,6 @@ function AppContent() {
   };
 
   useEffect(() => {
-    if (userRole === "ADMIN") {
-      navigate("/admin");
-    }
     fetchReservations();
   }, []);
 
@@ -89,7 +69,6 @@ function AppContent() {
       alert("Failed to delete reservation.");
     }
   };
-
   return (
     <>
       <HeroUIProvider>
@@ -101,9 +80,7 @@ function AppContent() {
             {currentUser ? (
               <>
                 <span className="text-gray-600">
-                  {userRole === 'ADMIN'
-                    ? 'Welcome, Admin!'
-                    : 'Welcome, User!'}
+                  <Avatar showFallback src="https://images.unsplash.com/broken" />
                 </span>
                 <Button
                   style={{
@@ -169,15 +146,25 @@ function AppContent() {
             <Table aria-label="Table with row dividers" className="max-w-md">
               <TableHeader>
                 <TableColumn>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                    }}
+                  >
                     QUEUE (CONSOLE)
                   </span>
                 </TableColumn>
               </TableHeader>
               <TableBody>
                 {data
-                  .filter(item => item.mode === "CONSOLE")
-                  .filter(item => selectedConsole === "All" || item.consoleType === selectedConsole)
+                  .filter((item) => item.mode === "CONSOLE")
+                  .filter(
+                    (item) =>
+                      selectedConsole === "All" ||
+                      item.consoleType === selectedConsole
+                  )
                   .map((item, index) => (
                     <React.Fragment key={index}>
                       <TableRow>
@@ -188,19 +175,38 @@ function AppContent() {
                           <Spacer y={2} />
                           <Card>
                             <CardBody>
-                              <p className="text-lg" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <p
+                                className="text-lg"
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
+                              >
                                 {item.name}
-                                {(userRole === 'ADMIN' || (currentUser && item.name === (currentUser.displayName || currentUser.email))) && (
+                                {(userRole === "ADMIN" ||
+                                  (currentUser &&
+                                    item.name ===
+                                      (currentUser.displayName ||
+                                        currentUser.email))) && (
                                   <span
-                                    style={{ color: '#ef4444', cursor: 'pointer', marginLeft: '1rem', fontWeight: 'bold', fontSize: '1.2em' }}
+                                    style={{
+                                      color: "#ef4444",
+                                      cursor: "pointer",
+                                      marginLeft: "1rem",
+                                      fontWeight: "bold",
+                                      fontSize: "1.2em",
+                                    }}
                                     title="Delete"
-                                    onClick={() => handleDeleteReservation(item._id)}
+                                    onClick={() =>
+                                      handleDeleteReservation(item._id)
+                                    }
                                   >
                                     ×
                                   </span>
                                 )}
                               </p>
-                              {item.mode === 'CONSOLE' ? (
+                              {item.mode === "CONSOLE" ? (
                                 <p className="text-sm text-gray-500">
                                   Console: {item.consoleType || "Unknown"}
                                 </p>
@@ -245,41 +251,60 @@ function AppContent() {
                 <TableColumn>QUEUE (PC)</TableColumn>
               </TableHeader>
               <TableBody>
-                {data.filter(item => item.mode === "PC").map((item, index) => (
-                  <React.Fragment key={index}>
-                    <TableRow>
-                      <TableCell>
-                        <h2 className="text-bold">
-                          <strong>Priority #{index + 1}</strong>
-                        </h2>
-                        <Spacer y={2} />
-                        <Card>
-                          <CardBody>
-                            <p className="text-lg" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              {item.name}
-                              {(userRole === 'ADMIN' || (currentUser && item.email === currentUser.email)) && (
-                                <span
-                                  style={{ color: '#ef4444', cursor: 'pointer', marginLeft: '1rem', fontWeight: 'bold', fontSize: '1.2em' }}
-                                  title="Delete"
-                                  onClick={() => handleDeleteReservation(item._id)}
-                                >
-                                  ×
-                                </span>
-                              )}
-                            </p>
-                            <p className="text-sm text-gray-500">PC</p>
-                          </CardBody>
-                        </Card>
-                        <Spacer y={2} />
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell colSpan={1} className="h-auto py-0">
-                        <Divider className="my-0" />
-                      </TableCell>
-                    </TableRow>
-                  </React.Fragment>
-                ))}
+                {data
+                  .filter((item) => item.mode === "PC")
+                  .map((item, index) => (
+                    <React.Fragment key={index}>
+                      <TableRow>
+                        <TableCell>
+                          <h2 className="text-bold">
+                            <strong>Priority #{index + 1}</strong>
+                          </h2>
+                          <Spacer y={2} />
+                          <Card>
+                            <CardBody>
+                              <p
+                                className="text-lg"
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
+                              >
+                                {item.name}
+                                {(userRole === "ADMIN" ||
+                                  (currentUser &&
+                                    item.email === currentUser.email)) && (
+                                  <span
+                                    style={{
+                                      color: "#ef4444",
+                                      cursor: "pointer",
+                                      marginLeft: "1rem",
+                                      fontWeight: "bold",
+                                      fontSize: "1.2em",
+                                    }}
+                                    title="Delete"
+                                    onClick={() =>
+                                      handleDeleteReservation(item._id)
+                                    }
+                                  >
+                                    ×
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-sm text-gray-500">PC</p>
+                            </CardBody>
+                          </Card>
+                          <Spacer y={2} />
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell colSpan={1} className="h-auto py-0">
+                          <Divider className="my-0" />
+                        </TableCell>
+                      </TableRow>
+                    </React.Fragment>
+                  ))}
               </TableBody>
             </Table>
           </div>
@@ -315,12 +340,9 @@ function AppContent() {
           placement="top-center"
           onOpenChange={onOpenChange}
           onReservationCreated={fetchReservations}
+          renderInput={true}
         />
       </HeroUIProvider>
     </>
   );
-}
-
-export default function App() {
-  return <AppContent />;
 }

@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import { auth } from './config';
 
+
 const AuthContext = createContext();
 
 export function useAuth() {
@@ -33,6 +34,7 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isRedirected, setIsRedirected] = useState(false);
 
   function signup(email, password) {
     return createUserWithEmailAndPassword(auth, email, password);

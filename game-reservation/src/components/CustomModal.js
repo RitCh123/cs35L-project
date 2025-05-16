@@ -19,6 +19,7 @@ import { Autocomplete, AutocompleteItem } from "@heroui/react";
 import { Select, SelectItem } from "@heroui/react";
 
 import axios from "axios";
+import { render } from "@testing-library/react";
 
 export const MailIcon = (props) => {
   return (
@@ -40,7 +41,13 @@ export const MailIcon = (props) => {
   );
 };
 
-export default function CustomModal({ isOpen, onOpen, onOpenChange, onReservationCreated }) {
+export default function CustomModal({
+  isOpen,
+  onOpen,
+  onOpenChange,
+  onReservationCreated,
+  renderInput = false,
+}) {
   const { currentUser } = useAuth();
   const modes = [
     { key: "PC", label: "PC", isConsole: false },
@@ -91,6 +98,13 @@ export default function CustomModal({ isOpen, onOpen, onOpenChange, onReservatio
     }
   };
 
+  const [inputValue, setInputValue] = useState("");
+  const [emailValue, setEmailValue] = useState("");
+
+  const handleChange = (event) => {
+    setInputValue(event.target.value.toUpperCase());
+  };
+
   return (
     <>
       <Modal isOpen={isOpen} placement="top-center" onOpenChange={onOpenChange}>
@@ -101,6 +115,23 @@ export default function CustomModal({ isOpen, onOpen, onOpenChange, onReservatio
                 Create a Reservation
               </ModalHeader>
               <ModalBody>
+                {renderInput && (
+                  <>
+                    <Input
+                      className="max-w-base"
+                      label="Full Name"
+                      placeholder="Enter your full name"
+                      value={inputValue}
+                      onChange={handleChange}
+                    />
+                    <Input
+                      className="max-w-base"
+                      label="Email"
+                      placeholder="Enter your email"
+                      onChange={(e) => setEmailValue(e.target.value)}
+                    />
+                  </>
+                )}
                 <Select
                   className="max-w-base"
                   label="Mode of play"
@@ -134,9 +165,12 @@ export default function CustomModal({ isOpen, onOpen, onOpenChange, onReservatio
                 <Button
                   color="success"
                   onPress={async () => {
+                    console.log(
+                      (renderInput && inputValue) || currentUser.email
+                    );
                     const reservation = {
-                      name: currentUser.displayName || currentUser.email,
-                      email: currentUser.email,
+                      name: (renderInput && inputValue) || currentUser.displayName,
+                      email: (renderInput && emailValue) || currentUser.email,
                       mode: selectedMode,
                     };
                     if (selectedMode === "CONSOLE") {
@@ -148,7 +182,8 @@ export default function CustomModal({ isOpen, onOpen, onOpenChange, onReservatio
                   }}
                   isDisabled={
                     !selectedMode ||
-                    (selectedMode === "CONSOLE" && !selectedConsoleType)
+                    (selectedMode === "CONSOLE" && !selectedConsoleType) ||
+                    (renderInput && !inputValue && !emailValue)
                   }
                 >
                   Create
