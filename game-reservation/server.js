@@ -4,7 +4,7 @@ const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
-app.use(cors({ origin: 'http://localhost:3000' }));
+app.use(cors({ origin: "http://localhost:3000" }));
 app.use(express.json());
 
 // Connection URI
@@ -16,10 +16,7 @@ const client = new MongoClient(uri);
 // Database Name
 const dbName = "eclipse_gaming";
 
-const adminEmails = [
-  'rchavali@g.ucla.edu',
-  'nks676@g.ucla.edu',
-];
+const adminEmails = ["rchavali@g.ucla.edu", "nks676@g.ucla.edu"];
 
 async function connectToDatabase() {
   try {
@@ -72,19 +69,17 @@ app.post("/api/create/user", async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
     // Create a new user
-    
+
     const user = {
       email,
       role,
       createdAt: new Date(),
     };
     const result = await db.collection("users").insertOne(user);
-    res
-      .status(201)
-      .json({
-        message: "User created",
-        userId: result.insertedId,
-      });
+    res.status(201).json({
+      message: "User created",
+      userId: result.insertedId,
+    });
   } catch (err) {
     console.error("Error fetching reservations:", err);
     res.status(500).send("Internal Server Error");
@@ -103,7 +98,9 @@ app.post("/api/create/reservation", async (req, res) => {
     }
     const existing = await db.collection("reservations").findOne(query);
     if (existing) {
-      return res.status(400).json({ message: "You already have a reservation for this queue." });
+      return res
+        .status(400)
+        .json({ message: "You already have a reservation for this queue." });
     }
     const reservation = {
       name,
@@ -116,48 +113,47 @@ app.post("/api/create/reservation", async (req, res) => {
       reservation.consoleType = consoleType;
     }
     const result = await db.collection("reservations").insertOne(reservation);
-    res
-      .status(201)
-      .json({
-        message: "Reservation created",
-        reservationId: result.insertedId,
-      });
+    res.status(201).json({
+      message: "Reservation created",
+      reservationId: result.insertedId,
+    });
   } catch (err) {
     console.error("Error fetching reservations:", err);
     res.status(500).send("Internal Server Error");
   }
 });
-
-<<<<<<< Updated upstream
 app.delete("/api/delete/reservation", async (req, res) => {
   try {
     const db = client.db(dbName);
     const { reservationId, userEmail, userRole } = req.body;
     if (!reservationId || !userEmail || !userRole) {
-      return res.status(400).json({ message: "Missing reservationId, userEmail, or userRole" });
+      return res
+        .status(400)
+        .json({ message: "Missing reservationId, userEmail, or userRole" });
     }
-    const reservation = await db.collection("reservations").findOne({ _id: new ObjectId(reservationId) });
+    const reservation = await db
+      .collection("reservations")
+      .findOne({ _id: new ObjectId(reservationId) });
     if (!reservation) {
       return res.status(404).json({ message: "Reservation not found" });
+    } // Only allow if admin or owner (case-insensitive)
+    if (
+      userRole !== "ADMIN" &&
+      reservation.email.toLowerCase() !== userEmail.toLowerCase()
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete this reservation" });
     }
-    // Only allow if admin or owner (case-insensitive)
-    if (userRole !== 'ADMIN' && reservation.email.toLowerCase() !== userEmail.toLowerCase()) {
-      return res.status(403).json({ message: "Not authorized to delete this reservation" });
-    }
-    await db.collection("reservations").deleteOne({ _id: new ObjectId(reservationId) });
+    await db
+      .collection("reservations")
+      .deleteOne({ _id: new ObjectId(reservationId) });
     res.json({ message: "Reservation deleted" });
   } catch (err) {
     console.error("Error deleting reservation:", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
-
-// Health check endpoint
-app.get("/api/health", (req, res) => {
-  res.json({ status: "healthy", timestamp: new Date() });
-});
-=======
->>>>>>> Stashed changes
 
 // Start the server
 const port = 8080;

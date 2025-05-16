@@ -1,0 +1,348 @@
+import React from "react";
+
+import {
+  HeroUIProvider,
+  Button,
+  Link,
+  Table,
+  TableHeader,
+  TableColumn,
+  TableCell,
+  Chip,
+  Spacer,
+  TableRow,
+  TableBody,
+  Card,
+  CardBody,
+  Divider,
+  Avatar
+} from "@heroui/react";
+import CustomModal from "./components/CustomModal";
+
+import { useAuth } from "./firebase/AuthContext";
+
+import { useState } from "react";
+import { useDisclosure } from "@heroui/react";
+import { useEffect } from "react";
+import axios from "axios";
+
+export default function Admin() {
+  const { currentUser, logout, userRole } = useAuth();
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const [data, setData] = useState([]);
+  const [selectedConsole, setSelectedConsole] = useState("All");
+  const consoleTypes = ["All", "Switch", "Xbox", "PS5"];
+  const fetchReservations = () => {
+    axios
+      .get("http://localhost:8080/api/view/reservations")
+      .then((response) => setData(response.data))
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+      });
+  };
+
+  useEffect(() => {
+    fetchReservations();
+  }, []);
+
+  let priority = 1;
+  console.log(data);
+  if (data) {
+    data.map((item) => {
+      item["priority"] = priority;
+      priority++;
+    });
+  }
+
+  const handleDeleteReservation = async (reservationId) => {
+    if (!currentUser) return;
+    try {
+      await axios.delete("http://localhost:8080/api/delete/reservation", {
+        data: {
+          reservationId,
+          userEmail: currentUser.email,
+          userRole,
+        },
+      });
+      fetchReservations();
+    } catch (err) {
+      alert("Failed to delete reservation.");
+    }
+  };
+  return (
+    <>
+      <HeroUIProvider>
+        <nav className="w-full flex items-center justify-between p-4 bg-white">
+          <div className="text-xl font-bold">
+            <strong>Game Reservation</strong>
+          </div>
+          <div className="flex gap-2">
+            {currentUser ? (
+              <>
+                <span className="text-gray-600">
+                  <Avatar showFallback src="https://images.unsplash.com/broken" />
+                </span>
+                <Button
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(to top right, #ef4444, #f97316)",
+                    color: "white",
+                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                  }}
+                  onClick={logout}
+                >
+                  Log Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(to top right, #ec4899, #facc15)",
+                    color: "white",
+                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                  }}
+                  as={Link}
+                  href="/signup"
+                >
+                  Sign Up
+                </Button>
+                <Button
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(to top right, #ef4444, #f97316)",
+                    color: "white",
+                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                  }}
+                  as={Link}
+                  href="/login"
+                >
+                  Log In
+                </Button>
+              </>
+            )}
+          </div>
+        </nav>
+        <div style={{ display: "flex", justifyContent: "space-around" }}>
+          <div className="App" style={{ padding: "20px", width: "50%" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-start",
+                alignItems: "center",
+                flexDirection: "row",
+                gap: "10px",
+              }}
+            >
+              <Chip color="primary" size="lg">
+                Average Time: 8 minutes
+              </Chip>
+              <Chip color="secondary" size="lg">
+                Consoles Available: 2
+              </Chip>
+            </div>
+            <Spacer y={2} />
+            <Table aria-label="Table with row dividers" className="max-w-md">
+              <TableHeader>
+                <TableColumn>
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    QUEUE (CONSOLE)
+                  </span>
+                </TableColumn>
+              </TableHeader>
+              <TableBody>
+                {data
+                  .filter((item) => item.mode === "CONSOLE")
+                  .filter(
+                    (item) =>
+                      selectedConsole === "All" ||
+                      item.consoleType === selectedConsole
+                  )
+                  .map((item, index) => (
+                    <React.Fragment key={index}>
+                      <TableRow>
+                        <TableCell>
+                          <h2 className="text-bold">
+                            <strong>Priority #{index + 1}</strong>
+                          </h2>
+                          <Spacer y={2} />
+                          <Card>
+                            <CardBody>
+                              <p
+                                className="text-lg"
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
+                              >
+                                {item.name}
+                                {(userRole === "ADMIN" ||
+                                  (currentUser &&
+                                    item.name ===
+                                      (currentUser.displayName ||
+                                        currentUser.email))) && (
+                                  <span
+                                    style={{
+                                      color: "#ef4444",
+                                      cursor: "pointer",
+                                      marginLeft: "1rem",
+                                      fontWeight: "bold",
+                                      fontSize: "1.2em",
+                                    }}
+                                    title="Delete"
+                                    onClick={() =>
+                                      handleDeleteReservation(item._id)
+                                    }
+                                  >
+                                    ×
+                                  </span>
+                                )}
+                              </p>
+                              {item.mode === "CONSOLE" ? (
+                                <p className="text-sm text-gray-500">
+                                  Console: {item.consoleType || "Unknown"}
+                                </p>
+                              ) : (
+                                <p className="text-sm text-gray-500">PC</p>
+                              )}
+                            </CardBody>
+                          </Card>
+                          <Spacer y={2} />
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell colSpan={1} className="h-auto py-0">
+                          <Divider className="my-0" />
+                        </TableCell>
+                      </TableRow>
+                    </React.Fragment>
+                  ))}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="App" style={{ padding: "20px", width: "50%" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-start",
+                alignItems: "center",
+                flexDirection: "row",
+                gap: "10px",
+              }}
+            >
+              <Chip color="primary" size="lg">
+                Average Time: 8 minutes
+              </Chip>
+              <Chip color="secondary" size="lg">
+                PCs Available: 25
+              </Chip>
+            </div>
+            <Spacer y={2} />
+            <Table aria-label="Table with row dividers" className="max-w-md">
+              <TableHeader>
+                <TableColumn>QUEUE (PC)</TableColumn>
+              </TableHeader>
+              <TableBody>
+                {data
+                  .filter((item) => item.mode === "PC")
+                  .map((item, index) => (
+                    <React.Fragment key={index}>
+                      <TableRow>
+                        <TableCell>
+                          <h2 className="text-bold">
+                            <strong>Priority #{index + 1}</strong>
+                          </h2>
+                          <Spacer y={2} />
+                          <Card>
+                            <CardBody>
+                              <p
+                                className="text-lg"
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
+                              >
+                                {item.name}
+                                {(userRole === "ADMIN" ||
+                                  (currentUser &&
+                                    item.email === currentUser.email)) && (
+                                  <span
+                                    style={{
+                                      color: "#ef4444",
+                                      cursor: "pointer",
+                                      marginLeft: "1rem",
+                                      fontWeight: "bold",
+                                      fontSize: "1.2em",
+                                    }}
+                                    title="Delete"
+                                    onClick={() =>
+                                      handleDeleteReservation(item._id)
+                                    }
+                                  >
+                                    ×
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-sm text-gray-500">PC</p>
+                            </CardBody>
+                          </Card>
+                          <Spacer y={2} />
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell colSpan={1} className="h-auto py-0">
+                          <Divider className="my-0" />
+                        </TableCell>
+                      </TableRow>
+                    </React.Fragment>
+                  ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+        <Button
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            borderRadius: "50%",
+            width: "50px",
+            height: "50px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            fontSize: "24px",
+            backgroundColor: "#ff5e5e",
+          }}
+          isIconOnly
+          onPress={onOpen}
+        >
+          <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
+            <path
+              d="M10 4v12M4 10h12"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        </Button>
+        <CustomModal
+          isOpen={isOpen}
+          placement="top-center"
+          onOpenChange={onOpenChange}
+          onReservationCreated={fetchReservations}
+          renderInput={true}
+        />
+      </HeroUIProvider>
+    </>
+  );
+}

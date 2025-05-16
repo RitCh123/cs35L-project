@@ -3,6 +3,8 @@ import { useAuth } from "./firebase/AuthContext";
 
 import { Avatar, AvatarIcon } from "@heroui/react";
 
+import { useNavigate }  from "react-router-dom";
+
 // Import bulk dependencies based on need
 
 import {
@@ -28,6 +30,7 @@ import { Link } from "@heroui/react";
 
 import axios from "axios";
 
+
 import {
   Table,
   TableHeader,
@@ -40,6 +43,7 @@ import {
 import CustomModal from "./components/CustomModal";
 
 function AppContent() {
+  const navigate = useNavigate();
   const { currentUser, logout, userRole } = useAuth();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [data, setData] = useState([]);
@@ -55,6 +59,9 @@ function AppContent() {
   };
 
   useEffect(() => {
+    if (userRole === "ADMIN") {
+      navigate("/admin");
+    }
     fetchReservations();
   }, []);
 
@@ -164,15 +171,6 @@ function AppContent() {
                 <TableColumn>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     QUEUE (CONSOLE)
-                    <select
-                      value={selectedConsole}
-                      onChange={e => setSelectedConsole(e.target.value)}
-                      style={{ padding: '0.25rem 0.5rem', borderRadius: '6px', fontSize: '0.95em', marginLeft: '0.5rem' }}
-                    >
-                      {consoleTypes.map(type => (
-                        <option key={type} value={type}>{type}</option>
-                      ))}
-                    </select>
                   </span>
                 </TableColumn>
               </TableHeader>
