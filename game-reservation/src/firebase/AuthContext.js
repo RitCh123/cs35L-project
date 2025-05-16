@@ -23,10 +23,10 @@ function isUCLAEmail(email) {
 // Helper function to check if user is admin
 function isAdmin(email) {
   const adminEmails = [
-    'rchavali@g.ucla.edu'
-    // 'nks676@g.ucla.edu'
+    'rchavali@g.ucla.edu',
+    'nks676@g.ucla.edu'
   ];
-  return adminEmails.includes(email);
+  return adminEmails.map(e => e.toLowerCase()).includes(email.toLowerCase());
 }
 
 export function AuthProvider({ children }) {

@@ -1,4 +1,4 @@
-const { MongoClient } = require("mongodb");
+const { MongoClient, ObjectId } = require("mongodb");
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
@@ -15,6 +15,11 @@ const client = new MongoClient(uri);
 
 // Database Name
 const dbName = "eclipse_gaming";
+
+const adminEmails = [
+  'rchavali@g.ucla.edu',
+  'nks676@g.ucla.edu',
+];
 
 async function connectToDatabase() {
   try {
@@ -58,17 +63,26 @@ app.post("/api/create/reservation", async (req, res) => {
   try {
     console.log("Received request:", req.body);
     const db = client.db(dbName);
-    const { name, game, mode } = req.body;
-    const reservations = await db.collection("reservations").find({
-        "name": name
-    }).toArray();
-    
+    const { name, email, game, mode, consoleType } = req.body;
+    // Prevent duplicate reservation for same user and queue
+    const query = { email, mode };
+    if (mode === "CONSOLE") {
+      query.consoleType = consoleType;
+    }
+    const existing = await db.collection("reservations").findOne(query);
+    if (existing) {
+      return res.status(400).json({ message: "You already have a reservation for this queue." });
+    }
     const reservation = {
       name,
+      email,
       game,
       mode,
       createdAt: new Date(),
     };
+    if (mode === "CONSOLE") {
+      reservation.consoleType = consoleType;
+    }
     const result = await db.collection("reservations").insertOne(reservation);
     res
       .status(201)
@@ -79,6 +93,29 @@ app.post("/api/create/reservation", async (req, res) => {
   } catch (err) {
     console.error("Error fetching reservations:", err);
     res.status(500).send("Internal Server Error");
+  }
+});
+
+app.delete("/api/delete/reservation", async (req, res) => {
+  try {
+    const db = client.db(dbName);
+    const { reservationId, userEmail, userRole } = req.body;
+    if (!reservationId || !userEmail || !userRole) {
+      return res.status(400).json({ message: "Missing reservationId, userEmail, or userRole" });
+    }
+    const reservation = await db.collection("reservations").findOne({ _id: new ObjectId(reservationId) });
+    if (!reservation) {
+      return res.status(404).json({ message: "Reservation not found" });
+    }
+    // Only allow if admin or owner (case-insensitive)
+    if (userRole !== 'ADMIN' && reservation.email.toLowerCase() !== userEmail.toLowerCase()) {
+      return res.status(403).json({ message: "Not authorized to delete this reservation" });
+    }
+    await db.collection("reservations").deleteOne({ _id: new ObjectId(reservationId) });
+    res.json({ message: "Reservation deleted" });
+  } catch (err) {
+    console.error("Error deleting reservation:", err);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 

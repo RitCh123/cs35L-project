@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useAuth } from "../firebase/AuthContext";
 
 import {
   Modal,
@@ -39,7 +40,8 @@ export const MailIcon = (props) => {
   );
 };
 
-export default function CustomModal({ isOpen, onOpen, onOpenChange }) {
+export default function CustomModal({ isOpen, onOpen, onOpenChange, onReservationCreated }) {
+  const { currentUser } = useAuth();
   const modes = [
     { key: "PC", label: "PC", isConsole: false },
     { key: "XBOX", label: "XBOX", isConsole: true },
@@ -65,7 +67,17 @@ export default function CustomModal({ isOpen, onOpen, onOpenChange }) {
 
   const [selectedGame, setSelectedGame] = useState(null);
   const [selectedMode, setSelectedMode] = useState(null);
-  const [selectedName, setSelectedName] = useState("");
+  const [selectedConsoleType, setSelectedConsoleType] = useState(null);
+
+  const modeOptions = [
+    { key: "PC", label: "PC" },
+    { key: "CONSOLE", label: "Console" },
+  ];
+  const consoleTypeOptions = [
+    { key: "Switch", label: "Switch" },
+    { key: "Xbox", label: "Xbox" },
+    { key: "PS5", label: "PS5" },
+  ];
 
   const sendRequest = async (data) => {
     try {
@@ -89,42 +101,31 @@ export default function CustomModal({ isOpen, onOpen, onOpenChange }) {
                 Create a Reservation
               </ModalHeader>
               <ModalBody>
-                <Input
-                  endContent={
-                    <MailIcon className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
-                  }
-                  label="Primary (Full) Name"
-                  placeholder="Enter the primary name for the reservation"
-                  variant="bordered"
-                  onChange={(e) => setSelectedName(e.target.value)}
-                />
                 <Select
                   className="max-w-base"
                   label="Mode of play"
                   placeholder="Select your mode of play"
                   onChange={(e) => {
                     setSelectedMode(e.target.value);
+                    setSelectedConsoleType(null); // Reset console type if mode changes
                   }}
                 >
-                  {modes.map((mode) => (
+                  {modeOptions.map((mode) => (
                     <SelectItem key={mode.key}>{mode.label}</SelectItem>
                   ))}
                 </Select>
-                <Autocomplete
-                  className="max-w-base"
-                  defaultItems={games}
-                  label="Game"
-                  placeholder="Search for a game"
-                  onInputChange={(e) => {
-                    setSelectedGame(e);
-                  }}  
-                >
-                  {(game) => (
-                    <AutocompleteItem key={game.key}>
-                      {game.label}
-                    </AutocompleteItem>
-                  )}
-                </Autocomplete>
+                {selectedMode === "CONSOLE" && (
+                  <Select
+                    className="max-w-base"
+                    label="Console Type"
+                    placeholder="Select console type"
+                    onChange={(e) => setSelectedConsoleType(e.target.value)}
+                  >
+                    {consoleTypeOptions.map((console) => (
+                      <SelectItem key={console.key}>{console.label}</SelectItem>
+                    ))}
+                  </Select>
+                )}
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="flat" onPress={onClose}>
@@ -132,14 +133,23 @@ export default function CustomModal({ isOpen, onOpen, onOpenChange }) {
                 </Button>
                 <Button
                   color="success"
-                  onPress={() => {
-                    sendRequest({
-                      name: selectedName,
+                  onPress={async () => {
+                    const reservation = {
+                      name: currentUser.displayName || currentUser.email,
+                      email: currentUser.email,
                       mode: selectedMode,
-                      game: selectedGame,
-                    });
+                    };
+                    if (selectedMode === "CONSOLE") {
+                      reservation.consoleType = selectedConsoleType;
+                    }
+                    await sendRequest(reservation);
+                    if (onReservationCreated) onReservationCreated();
                     onClose();
                   }}
+                  isDisabled={
+                    !selectedMode ||
+                    (selectedMode === "CONSOLE" && !selectedConsoleType)
+                  }
                 >
                   Create
                 </Button>
