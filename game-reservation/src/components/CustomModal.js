@@ -41,7 +41,13 @@ export const MailIcon = (props) => {
   );
 };
 
-export default function CustomModal({ isOpen, onOpen, onOpenChange, onReservationCreated, renderInput = false }) {
+export default function CustomModal({
+  isOpen,
+  onOpen,
+  onOpenChange,
+  onReservationCreated,
+  renderInput = false,
+}) {
   const { currentUser } = useAuth();
   const modes = [
     { key: "PC", label: "PC", isConsole: false },
@@ -92,7 +98,8 @@ export default function CustomModal({ isOpen, onOpen, onOpenChange, onReservatio
     }
   };
 
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
+  const [emailValue, setEmailValue] = useState("");
 
   const handleChange = (event) => {
     setInputValue(event.target.value.toUpperCase());
@@ -109,12 +116,21 @@ export default function CustomModal({ isOpen, onOpen, onOpenChange, onReservatio
               </ModalHeader>
               <ModalBody>
                 {renderInput && (
-                  <Input
-                    className="max-w-base"
-                    label="Full Name"
-                    placeholder="Enter your full name"
-                    value={inputValue}
-                    onChange={handleChange} />
+                  <>
+                    <Input
+                      className="max-w-base"
+                      label="Full Name"
+                      placeholder="Enter your full name"
+                      value={inputValue}
+                      onChange={handleChange}
+                    />
+                    <Input
+                      className="max-w-base"
+                      label="Email"
+                      placeholder="Enter your email"
+                      onChange={(e) => setEmailValue(e.target.value)}
+                    />
+                  </>
                 )}
                 <Select
                   className="max-w-base"
@@ -149,9 +165,12 @@ export default function CustomModal({ isOpen, onOpen, onOpenChange, onReservatio
                 <Button
                   color="success"
                   onPress={async () => {
+                    console.log(
+                      (renderInput && inputValue) || currentUser.email
+                    );
                     const reservation = {
-                      name: (renderInput ? inputValue : currentUser.displayName),
-                      email: currentUser.email,
+                      name: (renderInput && inputValue) || currentUser.displayName,
+                      email: (renderInput && emailValue) || currentUser.email,
                       mode: selectedMode,
                     };
                     if (selectedMode === "CONSOLE") {
@@ -163,8 +182,8 @@ export default function CustomModal({ isOpen, onOpen, onOpenChange, onReservatio
                   }}
                   isDisabled={
                     !selectedMode ||
-                    (selectedMode === "CONSOLE" && !selectedConsoleType)
-                    || (renderInput && !inputValue)
+                    (selectedMode === "CONSOLE" && !selectedConsoleType) ||
+                    (renderInput && !inputValue && !emailValue)
                   }
                 >
                   Create
