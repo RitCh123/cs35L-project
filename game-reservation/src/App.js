@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "./firebase/AuthContext";
 
+import { Avatar, AvatarIcon } from "@heroui/react";
+
 // Import bulk dependencies based on need
 
 import {
@@ -57,7 +59,7 @@ function AppContent() {
   }, []);
 
   let priority = 1;
-  console.log(data)
+  console.log(data);
   if (data) {
     data.map((item) => {
       item["priority"] = priority;
@@ -98,7 +100,8 @@ function AppContent() {
                 </span>
                 <Button
                   style={{
-                    backgroundImage: "linear-gradient(to top right, #ef4444, #f97316)",
+                    backgroundImage:
+                      "linear-gradient(to top right, #ef4444, #f97316)",
                     color: "white",
                     boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
                   }}
@@ -111,7 +114,8 @@ function AppContent() {
               <>
                 <Button
                   style={{
-                    backgroundImage: "linear-gradient(to top right, #ec4899, #facc15)",
+                    backgroundImage:
+                      "linear-gradient(to top right, #ec4899, #facc15)",
                     color: "white",
                     boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
                   }}
@@ -122,7 +126,8 @@ function AppContent() {
                 </Button>
                 <Button
                   style={{
-                    backgroundImage: "linear-gradient(to top right, #ef4444, #f97316)",
+                    backgroundImage:
+                      "linear-gradient(to top right, #ef4444, #f97316)",
                     color: "white",
                     boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
                   }}

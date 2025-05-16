@@ -59,6 +59,38 @@ app.get("/api/view/reservations", async (req, res) => {
   }
 });
 
+app.post("/api/create/user", async (req, res) => {
+  try {
+    // alert("Received request:", req.body);
+    console.log("Received request:", req.body);
+    const db = client.db(dbName);
+    const { email, role } = req.body;
+
+    // Check if the user already exists
+    const existingUser = await db.collection("users").findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+    // Create a new user
+    
+    const user = {
+      email,
+      role,
+      createdAt: new Date(),
+    };
+    const result = await db.collection("users").insertOne(user);
+    res
+      .status(201)
+      .json({
+        message: "User created",
+        userId: result.insertedId,
+      });
+  } catch (err) {
+    console.error("Error fetching reservations:", err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
 app.post("/api/create/reservation", async (req, res) => {
   try {
     console.log("Received request:", req.body);
@@ -96,6 +128,7 @@ app.post("/api/create/reservation", async (req, res) => {
   }
 });
 
+<<<<<<< Updated upstream
 app.delete("/api/delete/reservation", async (req, res) => {
   try {
     const db = client.db(dbName);
@@ -123,6 +156,8 @@ app.delete("/api/delete/reservation", async (req, res) => {
 app.get("/api/health", (req, res) => {
   res.json({ status: "healthy", timestamp: new Date() });
 });
+=======
+>>>>>>> Stashed changes
 
 // Start the server
 const port = 8080;
@@ -134,9 +169,6 @@ async function startServer() {
     // Start listening
     app.listen(port, () => {
       console.log(`Server running at http://localhost:${port}`);
-      console.log(`Test the API with:
-            - Basic test: curl http://localhost:${port}/
-            - Health check: curl http://localhost:${port}/api/health`);
     });
   } catch (err) {
     console.error("Failed to start server:", err);
