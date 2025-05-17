@@ -20,7 +20,7 @@ export default function Login() {
       setError("");
       setLoading(true);
       await googleSignIn();
-      navigate("/"); // Redirect to home page after successful login
+      navigate("/");
     } catch (error) {
       setError(error.message);
     } finally {
@@ -56,4 +56,4 @@ export default function Login() {
       </Button>
     </div>
   );
-}
+} 
