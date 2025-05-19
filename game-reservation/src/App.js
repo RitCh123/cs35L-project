@@ -162,7 +162,7 @@ function AppContent() {
                 Average Time: 8 minutes
               </Chip>
               <Chip color="secondary" size="lg">
-                Consoles Available: 2
+                Consoles Available: {data.filter(item => item.mode === "CONSOLE" && (item.currentConsole === "Console 1" || item.currentConsole === "Console 2")).length}
               </Chip>
             </div>
             <Spacer y={2} />
@@ -177,7 +177,7 @@ function AppContent() {
               <TableBody>
                 {data
                   .filter(item => item.mode === "CONSOLE")
-                  .filter(item => selectedConsole === "All" || item.consoleType === selectedConsole)
+                  .filter((item =>(selectedConsole === "All" || item.consoleType === selectedConsole) && item.currentConsole === null))
                   .map((item, index) => (
                     <React.Fragment key={index}>
                       <TableRow>
