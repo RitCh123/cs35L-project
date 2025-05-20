@@ -90,7 +90,7 @@ app.post("/api/create/reservation", async (req, res) => {
   try {
     console.log("Received request:", req.body);
     const db = client.db(dbName);
-    const { name, email, game, mode, consoleType } = req.body;
+    const { name, email, game, mode, consoleType, pcLetter } = req.body;
     // Prevent duplicate reservation for same user and queue
     const query = { email, mode };
     if (mode === "CONSOLE") {
@@ -112,6 +112,11 @@ app.post("/api/create/reservation", async (req, res) => {
     if (mode === "CONSOLE") {
       reservation.consoleType = consoleType;
       reservation.currentConsole = null;
+    }
+
+    if (mode === "PC") {
+      reservation.pcLetter = pcLetter;
+      reservation.onCurrentPC = false;
     }
 
     const result = await db.collection("reservations").insertOne(reservation);
@@ -157,7 +162,52 @@ app.delete("/api/delete/reservation", async (req, res) => {
   }
 });
 
-app.post("/api/move/reservation", async (req, res) => {
+app.post("/api/move/pc/reservation", async (req, res) => {
+  console.log("Received request:", req.body);
+  try {
+    const db = client.db(dbName);
+    const { reservationId, pcLetter, onCurrentPC } = req.body;
+    if (!reservationId || !pcLetter) {
+      return res
+        .status(400)
+        .json({ message: "Missing reservationId" });
+    }
+
+    // if someone else is using the same PC, return error
+
+    const existingReservation = await db
+      .collection("reservations")
+      .findOne({ pcLetter: pcLetter, onCurrentPC: true });
+    if (existingReservation) {
+      return res
+        .status(400)
+        .json({ message: "PC is already in use by another reservation" });
+    }
+
+    // change reservation from onCurrentPC to true
+
+    const reservation = await db
+      .collection("reservations")
+      .findOne({ _id: new ObjectId(reservationId), pcLetter: pcLetter, onCurrentPC: false });
+    if (!reservation) {
+      return res.status(404).json({ message: "Reservation not found" });
+    }
+    await db
+      .collection("reservations")
+      .updateOne(
+        { _id: new ObjectId(reservationId) },
+        { $set: { pcLetter: pcLetter, onCurrentPC: true } }
+      );
+    res.status(201).json({ message: "Reservation moved" });
+
+
+  } catch (err) {
+    console.error("Error moving reservation:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+})
+
+app.post("/api/move/console/reservation", async (req, res) => {
   console.log("Received request:", req.body);
   try {
     const db = client.db(dbName);

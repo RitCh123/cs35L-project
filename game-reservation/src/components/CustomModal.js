@@ -72,6 +72,23 @@ export default function CustomModal({
     { key: "LEAGUE", label: "League of Legends" },
   ];
 
+  const listOfPC = [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "J",
+    "K",
+    "L",
+    "M",
+    "N",
+  ];
+
   const [selectedGame, setSelectedGame] = useState(null);
   const [selectedMode, setSelectedMode] = useState(null);
   const [selectedConsoleType, setSelectedConsoleType] = useState(null);
@@ -100,6 +117,8 @@ export default function CustomModal({
 
   const [inputValue, setInputValue] = useState("");
   const [emailValue, setEmailValue] = useState("");
+
+  const [choosePC, setChoosePC] = useState('');  
 
   const handleChange = (event) => {
     setInputValue(event.target.value.toUpperCase());
@@ -157,6 +176,18 @@ export default function CustomModal({
                     ))}
                   </Select>
                 )}
+                {selectedMode === "PC" && (
+                  <Select
+                    className="max-w-base"
+                    label="PC"
+                    placeholder="Select a PC"
+                    onChange={(e) => setChoosePC(e.target.value)}
+                  >
+                    {listOfPC.map((pc, index) => (
+                      <SelectItem key={pc}>{pc}</SelectItem>
+                    ))}
+                  </Select>
+                )}
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="flat" onPress={onClose}>
@@ -175,6 +206,9 @@ export default function CustomModal({
                     };
                     if (selectedMode === "CONSOLE") {
                       reservation.consoleType = selectedConsoleType;
+                    }
+                    if (selectedMode === "PC") {
+                      reservation.pcLetter = choosePC;
                     }
                     await sendRequest(reservation);
                     if (onReservationCreated) onReservationCreated();
