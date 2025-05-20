@@ -118,7 +118,7 @@ export default function CustomModal({
   const [inputValue, setInputValue] = useState("");
   const [emailValue, setEmailValue] = useState("");
 
-  const [choosePC, setChoosePC] = useState('');  
+  const [choosePC, setChoosePC] = useState("");
 
   const handleChange = (event) => {
     setInputValue(event.target.value.toUpperCase());
@@ -177,16 +177,21 @@ export default function CustomModal({
                   </Select>
                 )}
                 {selectedMode === "PC" && (
-                  <Select
-                    className="max-w-base"
-                    label="PC"
-                    placeholder="Select a PC"
-                    onChange={(e) => setChoosePC(e.target.value)}
-                  >
-                    {listOfPC.map((pc, index) => (
-                      <SelectItem key={pc}>{pc}</SelectItem>
-                    ))}
-                  </Select>
+                  <>
+                    <Select
+                      className="max-w-base"
+                      label="PC"
+                      placeholder="Select a PC"
+                      onChange={(e) => setChoosePC(e.target.value)}
+                    >
+                      {listOfPC.map((pc, index) => (
+                        <SelectItem key={pc}>{pc}</SelectItem>
+                      ))}
+                    </Select>
+                    <Link href="/pcs" target="_blank"><p className="text-sm" style={{ color: "blue" }}>
+                      What PC should I use?
+                    </p></Link>
+                  </>
                 )}
               </ModalBody>
               <ModalFooter>
@@ -200,7 +205,8 @@ export default function CustomModal({
                       (renderInput && inputValue) || currentUser.email
                     );
                     const reservation = {
-                      name: (renderInput && inputValue) || currentUser.displayName,
+                      name:
+                        (renderInput && inputValue) || currentUser.displayName,
                       email: (renderInput && emailValue) || currentUser.email,
                       mode: selectedMode,
                     };

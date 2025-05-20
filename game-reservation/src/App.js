@@ -59,7 +59,7 @@ function AppContent() {
     "K",
     "L",
     "M",
-    "N",
+    "Side",
   ];
   const [selectedPC, setSelectedPC] = useState("A");
 
@@ -79,9 +79,9 @@ function AppContent() {
   };
 
   useEffect(() => {
-    if (userRole === "ADMIN") {
-      navigate("/admin");
-    }
+    // if (userRole === "ADMIN") {
+    //   navigate("/admin");
+    // }
     fetchReservations();
   }, []);
 
@@ -295,7 +295,7 @@ function AppContent() {
                 {data.filter(item => item.mode === "PC" && item.pcLetter === selectedPC && item.onCurrentPC === false).map((item, index) => (
                   <React.Fragment key={index}>
                     <TableRow>
-                      <TableCell>
+                      <TableCell colSpan={2} className="h-auto py-0">
                         <h2 className="text-bold">
                           <strong>Priority #{index + 1}</strong>
                         </h2>
@@ -321,7 +321,7 @@ function AppContent() {
                       </TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell colSpan={1} className="h-auto py-0">
+                      <TableCell colSpan={2} className="h-auto py-0">
                         <Divider className="my-0" />
                       </TableCell>
                     </TableRow>

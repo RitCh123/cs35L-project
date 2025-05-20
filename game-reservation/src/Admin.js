@@ -42,8 +42,13 @@ import { useDisclosure } from "@heroui/react";
 import { useEffect } from "react";
 import axios from "axios";
 
+import { useNavigate } from 'react-router'
+
 export default function Admin() {
   /// DEFINTE AUXILIARY COMPONENTS
+
+  const navigate = useNavigate();
+
 
   const listOfPC = [
     "A",
@@ -59,7 +64,7 @@ export default function Admin() {
     "K",
     "L",
     "M",
-    "N",
+    "Side",
   ];
 
   const ActionDropdown = ({ isConsole, removeOnClick, onClickConsoleOne, onClickConsoleTwo, onClickPC }) => {
@@ -71,7 +76,10 @@ export default function Admin() {
         <DropdownMenu aria-label="Static Actions">
           {isConsole ? (
             <DropdownSection>
-              <DropdownItem key="moveConsoleOne" onClick={onClickConsoleOne}>
+              <DropdownItem key="moveConsoleOne" onClick={() => {
+                onClickConsoleOne();
+                navigate(0);
+              }}>
                 Move to Console 1
               </DropdownItem>
               <DropdownItem key="moveConsoleTwo" onClick={onClickConsoleTwo}>

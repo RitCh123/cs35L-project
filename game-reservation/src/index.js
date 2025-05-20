@@ -10,6 +10,8 @@ import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider } from './firebase/AuthContext';
 import reportWebVitals from './reportWebVitals';
 
+import PCDisplay from './PCDisplay';
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
@@ -30,6 +32,14 @@ root.render(
             element={
               <PrivateRoute>
                 <App />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/pcs"
+            element={
+              <PrivateRoute>
+                <PCDisplay />
               </PrivateRoute>
             }
           />
