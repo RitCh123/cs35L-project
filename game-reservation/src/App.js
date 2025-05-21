@@ -85,9 +85,9 @@ function AppContent() {
 
 
   useEffect(() => {
-      if (userRole === "ADMIN") {
-        navigate("/admin");
-      }
+      // if (userRole === "ADMIN") {
+      //   navigate("/admin");
+      // }
     fetchReservations();
   }, []);
 

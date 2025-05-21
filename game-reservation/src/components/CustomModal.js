@@ -178,16 +178,6 @@ export default function CustomModal({
                 )}
                 {selectedMode === "PC" && (
                   <>
-                    <Select
-                      className="max-w-base"
-                      label="PC"
-                      placeholder="Select a PC"
-                      onChange={(e) => setChoosePC(e.target.value)}
-                    >
-                      {listOfPC.map((pc, index) => (
-                        <SelectItem key={pc}>{pc}</SelectItem>
-                      ))}
-                    </Select>
                     <Link href="/pcs" target="_blank"><p className="text-sm" style={{ color: "blue" }}>
                       What PC should I use?
                     </p></Link>

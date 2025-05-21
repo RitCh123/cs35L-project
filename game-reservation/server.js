@@ -166,8 +166,8 @@ app.post("/api/move/pc/reservation", async (req, res) => {
   console.log("Received request:", req.body);
   try {
     const db = client.db(dbName);
-    const { reservationId, pcLetter, onCurrentPC } = req.body;
-    if (!reservationId || !pcLetter) {
+    const { reservationId, onCurrentPC } = req.body;
+    if (!reservationId) {
       return res
         .status(400)
         .json({ message: "Missing reservationId" });
@@ -177,7 +177,7 @@ app.post("/api/move/pc/reservation", async (req, res) => {
 
     const existingReservation = await db
       .collection("reservations")
-      .findOne({ pcLetter: pcLetter, onCurrentPC: true });
+      .findOne({ onCurrentPC: true });
     if (existingReservation) {
       return res
         .status(400)
@@ -188,7 +188,7 @@ app.post("/api/move/pc/reservation", async (req, res) => {
 
     const reservation = await db
       .collection("reservations")
-      .findOne({ _id: new ObjectId(reservationId), pcLetter: pcLetter, onCurrentPC: false });
+      .findOne({ _id: new ObjectId(reservationId), onCurrentPC: false });
     if (!reservation) {
       return res.status(404).json({ message: "Reservation not found" });
     }
@@ -196,7 +196,7 @@ app.post("/api/move/pc/reservation", async (req, res) => {
       .collection("reservations")
       .updateOne(
         { _id: new ObjectId(reservationId) },
-        { $set: { pcLetter: pcLetter, onCurrentPC: true } }
+        { $set: { onCurrentPC: true } }
       );
     res.status(201).json({ message: "Reservation moved" });
 
