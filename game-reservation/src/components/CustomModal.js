@@ -216,6 +216,8 @@ export default function CustomModal({
                     if (selectedMode === "PC") {
                       reservation.pcLetter = choosePC;
                     }
+
+                    console.log("Submitting reservation:", reservation);
                     await sendRequest(reservation);
                     if (onReservationCreated) onReservationCreated();
                     onClose();

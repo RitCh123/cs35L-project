@@ -16,7 +16,7 @@ const client = new MongoClient(uri);
 // Database Name
 const dbName = "eclipse_gaming";
 
-const adminEmails = ["rchavali@g.ucla.edu", "nks676@g.ucla.edu"];
+const adminEmails = ["rchavali@g.ucla.edu", "nks676@g.ucla.edu", "nikhildewitt@g.ucla.edu"];
 
 async function connectToDatabase() {
   try {
@@ -31,6 +31,7 @@ async function connectToDatabase() {
     await db.createCollection("reservations");
     await db.createCollection("games");
     await db.createCollection("queue");
+    await db.createCollection("profiles");
 
     console.log("Database setup completed");
     return db;
@@ -105,7 +106,6 @@ app.post("/api/create/reservation", async (req, res) => {
     const reservation = {
       name,
       email,
-      game,
       mode,
       createdAt: new Date(),
     };
@@ -265,5 +265,39 @@ async function startServer() {
     process.exit(1);
   }
 }
+
+app.post("/api/create/profile", async (req, res) => {
+  try {
+    console.log("Received request:", req.body);
+    const db = client.db(dbName);
+    const { name, email, game, mode, time } = req.body;
+
+    // Check for existing profile by email
+    const existing = await db.collection("profiles").findOne({ email });
+    if (existing) {
+      return res
+        .status(400)
+        .json({ message: "You already have a profile setup." });
+    }
+
+    const profile = {
+      name,
+      email,
+      game,
+      mode,
+      time, // <-- now included
+      createdAt: new Date(),
+    };
+
+    const result = await db.collection("profiles").insertOne(profile);
+    res.status(201).json({
+      message: "Profile created",
+      profileId: result.insertedId,
+    });
+  } catch (err) {
+    console.error("Error creating profile:", err);
+    res.status(500).send("Internal Server Error");
+  }
+});
 
 startServer();

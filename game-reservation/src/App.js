@@ -65,10 +65,22 @@ function AppContent() {
 
   const navigate = useNavigate();
   const { currentUser, logout, userRole } = useAuth();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  
   const [data, setData] = useState([]);
   const [selectedConsole, setSelectedConsole] = useState("All");
   const consoleTypes = ["All", "Switch", "Xbox", "PS5"];
+
+  const {
+    isOpen: isReservationOpen,
+    onOpen: onOpenReservation,
+    onOpenChange: onReservationOpenChange,
+  } = useDisclosure();
+  
+  const {
+    isOpen: isProfileOpen,
+    onOpen: onOpenProfile,
+    onOpenChange: onProfileOpenChange,
+  } = useDisclosure();
 
   const fetchReservations = () => {
     axios.get("http://localhost:8080/api/view/reservations")
@@ -334,6 +346,39 @@ function AppContent() {
         <Button
           style={{
             position: "fixed",
+            bottom: "80px",
+            right: "20px",
+            borderRadius: "50%",
+            width: "50px",
+            height: "50px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            fontSize: "24px",
+            backgroundColor: "green",
+          }}
+          isIconOnly
+          onPress={onOpenProfile}
+        >
+          <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
+            <path
+              d="M10 4v12M4 10h12"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        </Button>
+        <CustomModal
+          isOpen={isProfileOpen}
+          placement="top-center"
+          onOpenChange={onProfileOpenChange}
+          onReservationCreated={fetchReservations}
+          renderInput={true}  // ✅ enables profile form
+        />
+        <Button
+          style={{
+            position: "fixed",
             bottom: "20px",
             right: "20px",
             borderRadius: "50%",
@@ -346,7 +391,7 @@ function AppContent() {
             backgroundColor: "#ff5e5e",
           }}
           isIconOnly
-          onPress={onOpen}
+          onPress={onOpenReservation}
         >
           <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
             <path
@@ -358,9 +403,9 @@ function AppContent() {
           </svg>
         </Button>
         <CustomModal
-          isOpen={isOpen}
+          isOpen={isReservationOpen}
           placement="top-center"
-          onOpenChange={onOpenChange}
+          onOpenChange={onReservationOpenChange}
           onReservationCreated={fetchReservations}
         />
       </HeroUIProvider>
