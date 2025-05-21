@@ -16,6 +16,8 @@ import {
   CardHeader,
   Image,
   useDisclosure,
+  Select,
+  SelectItem
 } from "@heroui/react";
 
 import { Chip } from "@heroui/react";
@@ -43,6 +45,24 @@ import {
 import CustomModal from "./components/CustomModal";
 
 function AppContent() {
+  const listOfPC = [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "J",
+    "K",
+    "L",
+    "M",
+    "Side",
+  ];
+  const [selectedPC, setSelectedPC] = useState("A");
+
   const navigate = useNavigate();
   const { currentUser, logout, userRole } = useAuth();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -59,9 +79,9 @@ function AppContent() {
   };
 
   useEffect(() => {
-    if (userRole === "ADMIN") {
-      navigate("/admin");
-    }
+    // if (userRole === "ADMIN") {
+    //   navigate("/admin");
+    // }
     fetchReservations();
   }, []);
 
@@ -162,7 +182,7 @@ function AppContent() {
                 Average Time: 8 minutes
               </Chip>
               <Chip color="secondary" size="lg">
-                Consoles Available: 2
+                Consoles Available: {2 - (data.filter(item => item.mode === "CONSOLE" && (item.currentConsole === "Console 1" || item.currentConsole === "Console 2")).length)}
               </Chip>
             </div>
             <Spacer y={2} />
@@ -177,7 +197,7 @@ function AppContent() {
               <TableBody>
                 {data
                   .filter(item => item.mode === "CONSOLE")
-                  .filter(item => selectedConsole === "All" || item.consoleType === selectedConsole)
+                  .filter((item =>(selectedConsole === "All" || item.consoleType === selectedConsole) && item.currentConsole === null))
                   .map((item, index) => (
                     <React.Fragment key={index}>
                       <TableRow>
@@ -236,19 +256,46 @@ function AppContent() {
                 Average Time: 8 minutes
               </Chip>
               <Chip color="secondary" size="lg">
-                PCs Available: 25
+                PCs Available: {14 - data.filter(item => item.mode === "PC" && item.onCurrentPC === true).length}
               </Chip>
             </div>
             <Spacer y={2} />
             <Table aria-label="Table with row dividers" className="max-w-md">
               <TableHeader>
                 <TableColumn>QUEUE (PC)</TableColumn>
+                <TableColumn>
+                  <Select
+                    className="bg-gray-100 text-xs px-2 py-1 rounded"
+                    style={{
+                      background: "#f9fafb", // matches typical table header bg
+                      fontSize: "0.75rem",
+                      height: "1.5rem",
+                      minWidth: "80px",
+                      border: "none",
+                      boxShadow: "none",
+                    }}
+                    size="sm"
+                    aria-label="PC Filter"
+                    placeholder="All PCs"
+                    onChange={(e) => {
+                      setSelectedPC(e.target.value);
+                    }}
+                    value={selectedPC}
+                    defaultSelectedKeys={["A"]}
+                  >
+                    {listOfPC.map((pc) => (
+                      <SelectItem key={pc} value={pc}>
+                        {pc}
+                      </SelectItem>
+                    ))}
+                  </Select>
+                </TableColumn>
               </TableHeader>
               <TableBody>
-                {data.filter(item => item.mode === "PC").map((item, index) => (
+                {data.filter(item => item.mode === "PC" && item.pcLetter === selectedPC && item.onCurrentPC === false).map((item, index) => (
                   <React.Fragment key={index}>
                     <TableRow>
-                      <TableCell>
+                      <TableCell colSpan={2} className="h-auto py-0">
                         <h2 className="text-bold">
                           <strong>Priority #{index + 1}</strong>
                         </h2>
@@ -274,7 +321,7 @@ function AppContent() {
                       </TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell colSpan={1} className="h-auto py-0">
+                      <TableCell colSpan={2} className="h-auto py-0">
                         <Divider className="my-0" />
                       </TableCell>
                     </TableRow>
