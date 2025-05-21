@@ -598,42 +598,17 @@ export default function Admin() {
               <TableHeader>
                 <TableColumn>QUEUE (PC)</TableColumn>
                 <TableColumn>
-                  <Select
-                    className="bg-gray-100 text-xs px-2 py-1 rounded"
-                    style={{
-                      background: "#f9fafb", // matches typical table header bg
-                      fontSize: "0.75rem",
-                      height: "1.5rem",
-                      minWidth: "80px",
-                      border: "none",
-                      boxShadow: "none",
-                    }}
-                    size="sm"
-                    aria-label="PC Filter"
-                    placeholder="All PCs"
-                    onChange={(e) => {
-                      setSelectedPC(e.target.value);
-                    }}
-                    value={selectedPC}
-                    defaultSelectedKeys={["A"]}
-                  >
-                    {listOfPC.map((pc) => (
-                      <SelectItem key={pc} value={pc}>
-                        {pc}
-                      </SelectItem>
-                    ))}
-                  </Select>
                 </TableColumn>
               </TableHeader>
               <TableBody>
                 {data
-                .filter((item) => item.mode === "PC" && item.pcLetter === selectedPC && item.onCurrentPC === true).length > 0 ? data
-                .filter((item) => item.mode === "PC" && item.pcLetter === selectedPC && item.onCurrentPC === true)
+                .filter((item) => item.mode === "PC" && item.onCurrentPC === true).length > 0 ? data
+                .filter((item) => item.mode === "PC" && item.onCurrentPC === true)
                 .map((item, index) => (
                   <TableRow>
                     <TableCell colSpan={2} className="h-auto py-0">
                       <h2 className="text-bold">
-                        <strong>PC {selectedPC}</strong>
+                        <strong>PC</strong>
                       </h2>
                       <Spacer y={2} />
                       <Card>
@@ -729,7 +704,7 @@ export default function Admin() {
                   </TableCell>
                 </TableRow>
                 {data
-                .filter((item) => item.mode === "PC" && item.pcLetter === selectedPC && item.onCurrentPC === false)
+                .filter((item) => item.mode === "PC" && item.onCurrentPC === false)
                 .map((item, index) => (
                   <TableRow>
                     <TableCell colSpan={2} className="h-auto py-0">
@@ -777,7 +752,6 @@ export default function Admin() {
                                       "http://localhost:8080/api/move/pc/reservation",
                                       {
                                         reservationId: item._id,
-                                        pcLetter: selectedPC,
                                         onCurrentPC: true,
                                       }
                                     )
