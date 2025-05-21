@@ -43,6 +43,7 @@ import {
 } from "@heroui/table";
 
 import CustomModal from "./components/CustomModal";
+import FriendModal from "./components/FriendModal";
 
 function AppContent() {
   const listOfPC = [
@@ -69,6 +70,8 @@ function AppContent() {
   const [data, setData] = useState([]);
   const [selectedConsole, setSelectedConsole] = useState("All");
   const consoleTypes = ["All", "Switch", "Xbox", "PS5"];
+  const [showProfiles, setShowProfiles] = useState(false);
+  const [profiles, setProfiles] = useState([]);
 
   const {
     isOpen: isReservationOpen,
@@ -88,6 +91,15 @@ function AppContent() {
       .catch((error) => {
         console.error("Error fetching data:", error);
       });
+  };
+
+  const fetchProfiles = async () => {
+    try {
+      const res = await axios.get("http://localhost:8080/api/view/profiles");
+      setProfiles(res.data);
+    } catch (err) {
+      console.error("Error fetching profiles:", err);
+    }
   };
 
   useEffect(() => {
@@ -343,6 +355,48 @@ function AppContent() {
             </Table>
           </div>
         </div>
+        
+
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+  <div style={{ alignSelf: "flex-start", marginLeft: "8px" }}>
+    <Button
+      color="primary"
+      variant="ghost"
+      onClick={() => {
+        if (!showProfiles) fetchProfiles();
+        setShowProfiles(!showProfiles);
+      }}
+    >
+      {showProfiles ? "Hide Profiles" : "View Profiles"}
+    </Button>
+  </div>
+
+      {showProfiles && (
+        <>
+          <Spacer y={2} />
+          <Table aria-label="User Profiles Table" className="max-w-md" style={{ margin: "0 auto" }}>
+            <TableHeader>
+              <TableColumn>Name</TableColumn>
+              <TableColumn>Email</TableColumn>
+              <TableColumn>Game</TableColumn>
+              <TableColumn>Mode</TableColumn>
+              <TableColumn>Time</TableColumn>
+            </TableHeader>
+            <TableBody>
+              {profiles.map((profile, index) => (
+                <TableRow key={index}>
+                  <TableCell>{profile.name}</TableCell>
+                  <TableCell>{profile.email}</TableCell>
+                  <TableCell>{profile.game || "N/A"}</TableCell>
+                  <TableCell>{profile.mode || "N/A"}</TableCell>
+                  <TableCell>{profile.time || "N/A"}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </>
+      )}
+    </div>
         <Button
           style={{
             position: "fixed",
@@ -369,7 +423,7 @@ function AppContent() {
             />
           </svg>
         </Button>
-        <CustomModal
+        <FriendModal
           isOpen={isProfileOpen}
           placement="top-center"
           onOpenChange={onProfileOpenChange}

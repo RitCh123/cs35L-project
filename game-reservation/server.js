@@ -57,6 +57,19 @@ app.get("/api/view/reservations", async (req, res) => {
   }
 });
 
+app.get("/api/view/profiles", async (req, res) => {
+  try {
+    const db = client.db(dbName);
+    const profiles = await db.collection("profiles").find({}).toArray();
+    res.json(profiles);
+  } catch (err) {
+    console.error("Error fetching profiles:", err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+
+
 app.post("/api/create/user", async (req, res) => {
   try {
     // alert("Received request:", req.body);
