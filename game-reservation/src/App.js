@@ -44,6 +44,7 @@ import {
 
 import CustomModal from "./components/CustomModal";
 import FriendModal from "./components/FriendModal";
+import ProfileTable from "./components/ProfileTable";
 
 function AppContent() {
   const listOfPC = [
@@ -374,26 +375,7 @@ function AppContent() {
       {showProfiles && (
         <>
           <Spacer y={2} />
-          <Table aria-label="User Profiles Table" className="max-w-md" style={{ margin: "0 auto" }}>
-            <TableHeader>
-              <TableColumn>Name</TableColumn>
-              <TableColumn>Email</TableColumn>
-              <TableColumn>Game</TableColumn>
-              <TableColumn>Mode</TableColumn>
-              <TableColumn>Time</TableColumn>
-            </TableHeader>
-            <TableBody>
-              {profiles.map((profile, index) => (
-                <TableRow key={index}>
-                  <TableCell>{profile.name}</TableCell>
-                  <TableCell>{profile.email}</TableCell>
-                  <TableCell>{profile.game || "N/A"}</TableCell>
-                  <TableCell>{profile.mode || "N/A"}</TableCell>
-                  <TableCell>{profile.time || "N/A"}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <ProfileTable profiles={profiles} />
         </>
       )}
     </div>
@@ -428,7 +410,13 @@ function AppContent() {
           placement="top-center"
           onOpenChange={onProfileOpenChange}
           onReservationCreated={fetchReservations}
-          renderInput={true}  // ✅ enables profile form
+          renderInput={true}
+          onProfileCreated = {
+            () => {
+              fetchProfiles();
+              setShowProfiles(true);
+            }
+          }
         />
         <Button
           style={{

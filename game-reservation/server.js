@@ -286,12 +286,12 @@ app.post("/api/create/profile", async (req, res) => {
     const { name, email, game, mode, time } = req.body;
 
     // Check for existing profile by email
-    const existing = await db.collection("profiles").findOne({ email });
+    {/*const existing = await db.collection("profiles").findOne({ email });
     if (existing) {
       return res
         .status(400)
         .json({ message: "You already have a profile setup." });
-    }
+    }*/}
 
     const profile = {
       name,
