@@ -67,7 +67,7 @@ function AppContent() {
 
   const navigate = useNavigate();
   const { currentUser, logout, userRole } = useAuth();
-  
+
   const [data, setData] = useState([]);
   const [selectedConsole, setSelectedConsole] = useState("All");
   const consoleTypes = ["All", "Switch", "Xbox", "PS5"];
@@ -151,6 +151,13 @@ function AppContent() {
                     : 'Welcome, User!'}
                 </span>
                 <Button
+                  as={Link}
+                  href="/friends"
+                  variant="ghost"
+                >
+                  Friends
+                </Button>
+                <Button
                   style={{
                     backgroundImage:
                       "linear-gradient(to top right, #ef4444, #f97316)",
@@ -164,30 +171,30 @@ function AppContent() {
               </>
             ) : (
               <>
-                <Button
-                  style={{
-                    backgroundImage:
+            <Button
+              style={{
+                backgroundImage:
                       "linear-gradient(to top right, #ec4899, #facc15)",
-                    color: "white",
-                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-                  }}
-                  as={Link}
+                color: "white",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              }}
+              as={Link}
                   href="/signup"
-                >
+            >
                   Sign Up
-                </Button>
-                <Button
-                  style={{
-                    backgroundImage:
+            </Button>
+            <Button
+              style={{
+                backgroundImage:
                       "linear-gradient(to top right, #ef4444, #f97316)",
-                    color: "white",
-                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-                  }}
-                  as={Link}
-                  href="/login"
-                >
-                  Log In
-                </Button>
+                color: "white",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              }}
+              as={Link}
+              href="/login"
+            >
+              Log In
+            </Button>
               </>
             )}
           </div>
@@ -226,13 +233,13 @@ function AppContent() {
                   .map((item, index) => (
                     <React.Fragment key={index}>
                       <TableRow>
-                        <TableCell>
-                          <h2 className="text-bold">
+                      <TableCell>
+                        <h2 className="text-bold">
                             <strong>Priority #{index + 1}</strong>
-                          </h2>
-                          <Spacer y={2} />
-                          <Card>
-                            <CardBody>
+                        </h2>
+                        <Spacer y={2} />
+                        <Card>
+                          <CardBody>
                               <p className="text-lg" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 {item.name}
                                 {(userRole === 'ADMIN' || (currentUser && item.name === (currentUser.displayName || currentUser.email))) && (
@@ -252,18 +259,18 @@ function AppContent() {
                               ) : (
                                 <p className="text-sm text-gray-500">PC</p>
                               )}
-                            </CardBody>
-                          </Card>
-                          <Spacer y={2} />
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell colSpan={1} className="h-auto py-0">
-                          <Divider className="my-0" />
-                        </TableCell>
-                      </TableRow>
+                          </CardBody>
+                        </Card>
+                        <Spacer y={2} />
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell colSpan={1} className="h-auto py-0">
+                        <Divider className="my-0" />
+                      </TableCell>
+                    </TableRow>
                     </React.Fragment>
-                  ))}
+                ))}
               </TableBody>
             </Table>
           </div>
@@ -358,66 +365,6 @@ function AppContent() {
         </div>
         
 
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-  <div style={{ alignSelf: "flex-start", marginLeft: "8px" }}>
-    <Button
-      color="primary"
-      variant="ghost"
-      onClick={() => {
-        if (!showProfiles) fetchProfiles();
-        setShowProfiles(!showProfiles);
-      }}
-    >
-      {showProfiles ? "Hide Profiles" : "View Profiles"}
-    </Button>
-  </div>
-
-      {showProfiles && (
-        <>
-          <Spacer y={2} />
-          <ProfileTable profiles={profiles} />
-        </>
-      )}
-    </div>
-        <Button
-          style={{
-            position: "fixed",
-            bottom: "80px",
-            right: "20px",
-            borderRadius: "50%",
-            width: "50px",
-            height: "50px",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            fontSize: "24px",
-            backgroundColor: "green",
-          }}
-          isIconOnly
-          onPress={onOpenProfile}
-        >
-          <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
-            <path
-              d="M10 4v12M4 10h12"
-              stroke="white"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          </svg>
-        </Button>
-        <FriendModal
-          isOpen={isProfileOpen}
-          placement="top-center"
-          onOpenChange={onProfileOpenChange}
-          onReservationCreated={fetchReservations}
-          renderInput={true}
-          onProfileCreated = {
-            () => {
-              fetchProfiles();
-              setShowProfiles(true);
-            }
-          }
-        />
         <Button
           style={{
             position: "fixed",

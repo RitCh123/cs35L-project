@@ -10,6 +10,8 @@ app.use(express.json());
 // Connection URI
 const uri = `mongodb+srv://nks676:${process.env.DB_PASSWORD}@eggert.a6kxlho.mongodb.net/?retryWrites=true&w=majority&appName=Eggert`;
 
+console.log('MongoDB URI:', uri);
+
 // Create a new MongoClient
 const client = new MongoClient(uri);
 
@@ -17,6 +19,9 @@ const client = new MongoClient(uri);
 const dbName = "eclipse_gaming";
 
 const adminEmails = ["rchavali@g.ucla.edu", "nks676@g.ucla.edu", "nikhildewitt@g.ucla.edu"];
+
+// Define valid status options
+const VALID_STATUSES = ['Online', 'Offline', 'In Game', 'Away', 'Busy'];
 
 async function connectToDatabase() {
   try {
@@ -60,15 +65,14 @@ app.get("/api/view/reservations", async (req, res) => {
 app.get("/api/view/profiles", async (req, res) => {
   try {
     const db = client.db(dbName);
-    const profiles = await db.collection("profiles").find({}).toArray();
+    // Only return profiles that are open to friends
+    const profiles = await db.collection("profiles").find({ openToFriends: true }).toArray();
     res.json(profiles);
   } catch (err) {
     console.error("Error fetching profiles:", err);
     res.status(500).send("Internal Server Error");
   }
 });
-
-
 
 app.post("/api/create/user", async (req, res) => {
   try {
@@ -83,7 +87,7 @@ app.post("/api/create/user", async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
     // Create a new user
-
+    
     const user = {
       email,
       role,
@@ -91,9 +95,9 @@ app.post("/api/create/user", async (req, res) => {
     };
     const result = await db.collection("users").insertOne(user);
     res.status(201).json({
-      message: "User created",
-      userId: result.insertedId,
-    });
+        message: "User created",
+        userId: result.insertedId,
+      });
   } catch (err) {
     console.error("Error fetching reservations:", err);
     res.status(500).send("Internal Server Error");
@@ -134,14 +138,15 @@ app.post("/api/create/reservation", async (req, res) => {
 
     const result = await db.collection("reservations").insertOne(reservation);
     res.status(201).json({
-      message: "Reservation created",
-      reservationId: result.insertedId,
-    });
+        message: "Reservation created",
+        reservationId: result.insertedId,
+      });
   } catch (err) {
     console.error("Error fetching reservations:", err);
     res.status(500).send("Internal Server Error");
   }
 });
+
 app.delete("/api/delete/reservation", async (req, res) => {
   try {
     const db = client.db(dbName);
@@ -213,7 +218,6 @@ app.post("/api/move/pc/reservation", async (req, res) => {
       );
     res.status(201).json({ message: "Reservation moved" });
 
-
   } catch (err) {
     console.error("Error moving reservation:", err);
     res.status(500).json({ message: "Internal Server Error" });
@@ -260,25 +264,6 @@ app.post("/api/move/console/reservation", async (req, res) => {
   }
 });
 
-
-
-// Start the server
-const port = 8080;
-
-async function startServer() {
-  try {
-    const db = await connectToDatabase();
-
-    // Start listening
-    app.listen(port, () => {
-      console.log(`Server running at http://localhost:${port}`);
-    });
-  } catch (err) {
-    console.error("Failed to start server:", err);
-    process.exit(1);
-  }
-}
-
 app.post("/api/create/profile", async (req, res) => {
   try {
     console.log("Received request:", req.body);
@@ -298,7 +283,8 @@ app.post("/api/create/profile", async (req, res) => {
       email,
       game,
       mode,
-      time, // <-- now included
+      time,
+      openToFriends: false, // Set default to false
       createdAt: new Date(),
     };
 
@@ -312,5 +298,79 @@ app.post("/api/create/profile", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
+
+app.post("/api/update/profile/status", async (req, res) => {
+  try {
+    const db = client.db(dbName);
+    const { email, status } = req.body;
+
+    if (!email || !status) {
+      return res.status(400).json({ message: "Missing email or status" });
+    }
+
+    if (!VALID_STATUSES.includes(status)) {
+      return res.status(400).json({ 
+        message: "Invalid status", 
+        validStatuses: VALID_STATUSES 
+      });
+    }
+
+    const result = await db.collection("profiles").updateOne(
+      { email },
+      { $set: { status } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    res.json({ message: "Status updated successfully" });
+  } catch (err) {
+    console.error("Error updating status:", err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+app.post("/api/update/profile/friends", async (req, res) => {
+  try {
+    const db = client.db(dbName);
+    const { email, openToFriends } = req.body;
+
+    if (!email || openToFriends === undefined) {
+      return res.status(400).json({ message: "Missing email or openToFriends status" });
+    }
+
+    const result = await db.collection("profiles").updateOne(
+      { email },
+      { $set: { openToFriends } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    res.json({ message: "Friends preference updated successfully" });
+  } catch (err) {
+    console.error("Error updating friends preference:", err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+// Start the server
+const port = 8080;
+
+async function startServer() {
+  try {
+    const db = await connectToDatabase();
+
+    // Start listening
+    app.listen(port, () => {
+      console.log(`Server running at http://localhost:${port}`);
+    });
+  } catch (err) {
+    console.error("Failed to start server:", err);
+    process.exit(1);
+  }
+}
 
 startServer();
