@@ -315,14 +315,12 @@ app.post("/api/update/profile/status", async (req, res) => {
       });
     }
 
-    const result = await db.collection("profiles").updateOne(
+    // Upsert: create profile if it does not exist
+    await db.collection("profiles").updateOne(
       { email },
-      { $set: { status } }
+      { $set: { status } },
+      { upsert: true }
     );
-
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ message: "Profile not found" });
-    }
 
     res.json({ message: "Status updated successfully" });
   } catch (err) {
@@ -340,14 +338,12 @@ app.post("/api/update/profile/friends", async (req, res) => {
       return res.status(400).json({ message: "Missing email or openToFriends status" });
     }
 
-    const result = await db.collection("profiles").updateOne(
+    // Upsert: create profile if it does not exist
+    await db.collection("profiles").updateOne(
       { email },
-      { $set: { openToFriends } }
+      { $set: { openToFriends } },
+      { upsert: true }
     );
-
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ message: "Profile not found" });
-    }
 
     res.json({ message: "Friends preference updated successfully" });
   } catch (err) {

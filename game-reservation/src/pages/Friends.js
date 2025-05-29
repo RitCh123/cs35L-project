@@ -118,35 +118,49 @@ export default function Friends() {
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Friends</h1>
-        <div className="flex items-center gap-8">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-12">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-700">Open to Friends</span>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
-                className="sr-only peer"
+                className="sr-only"
                 checked={openToFriends}
                 onChange={handleToggleFriends}
               />
-              <div className="w-14 h-7 bg-gray-300 rounded-full peer peer-checked:bg-blue-600 transition-colors duration-200 ease-in-out">
-                <div className={`w-5 h-5 bg-white rounded-full absolute top-1 left-1 transition-transform duration-200 ease-in-out ${openToFriends ? 'translate-x-7' : 'translate-x-0'}`}></div>
+              <div 
+                className="relative w-12 h-6 rounded-full border-2 transition-all duration-300 ease-in-out"
+                style={{
+                  backgroundColor: openToFriends ? '#10b981' : '#d1d5db',
+                  borderColor: openToFriends ? '#10b981' : '#9ca3af'
+                }}
+              >
+                <div 
+                  className="w-5 h-5 bg-white rounded-full shadow-lg absolute top-0.5 transition-all duration-300 ease-in-out"
+                  style={{
+                    transform: openToFriends ? 'translateX(20px)' : 'translateX(0px)'
+                  }}
+                ></div>
               </div>
-              <span className="ml-3 text-sm font-medium text-gray-900">Open to Friends</span>
             </label>
           </div>
-          <select
-            value={selectedStatus}
-            onChange={(e) => {
-              console.log('Select changed to:', e.target.value);
-              updateStatus(e.target.value);
-            }}
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-32 p-2.5"
-          >
-            {VALID_STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">Status:</span>
+            <select
+              value={selectedStatus}
+              onChange={(e) => {
+                console.log('Select changed to:', e.target.value);
+                updateStatus(e.target.value);
+              }}
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-32 p-2.5"
+            >
+              {VALID_STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
       
