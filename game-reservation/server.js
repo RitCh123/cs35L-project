@@ -270,13 +270,11 @@ app.post("/api/create/profile", async (req, res) => {
     const db = client.db(dbName);
     const { name, email, game, mode, time } = req.body;
 
-    // Check for existing profile by email
-    {/*const existing = await db.collection("profiles").findOne({ email });
+    // Enforce only one profile per user
+    const existing = await db.collection("profiles").findOne({ email });
     if (existing) {
-      return res
-        .status(400)
-        .json({ message: "You already have a profile setup." });
-    }*/}
+      return res.status(400).json({ message: "You already have a profile setup." });
+    }
 
     const profile = {
       name,
@@ -289,6 +287,10 @@ app.post("/api/create/profile", async (req, res) => {
     };
 
     const result = await db.collection("profiles").insertOne(profile);
+
+    // Delete any lingering profiles with the same email but a different _id (keep only the first/oldest)
+    await db.collection("profiles").deleteMany({ email, _id: { $ne: result.insertedId } });
+
     res.status(201).json({
       message: "Profile created",
       profileId: result.insertedId,
