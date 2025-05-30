@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../firebase/AuthContext';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
+import {
+  Table,
+  TableHeader,
+  TableColumn,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@heroui/table";
 
 const VALID_STATUSES = ['Online', 'Offline', 'In Game', 'Away', 'Busy'];
 
@@ -117,8 +126,41 @@ export default function Friends() {
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Friends</h1>
-        <div className="flex items-center gap-12">
+        <div className="flex-1 flex items-center">
+          <Link to="/">
+            <button
+              style={{
+                borderRadius: "50%",
+                width: "50px",
+                height: "50px",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                fontSize: "24px",
+                backgroundColor: "#2563eb", // blue-600
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                border: "none",
+                outline: "none",
+              }}
+              aria-label="Home"
+            >
+              <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
+                <path
+                  d="M10 2L2 10h3v6h4v-4h2v4h4v-6h3L10 2z"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+              </svg>
+            </button>
+          </Link>
+        </div>
+        <div className="flex-1 flex justify-center">
+          <h1 className="text-2xl font-bold">Friends</h1>
+        </div>
+        <div className="flex-1 flex items-center justify-end gap-12">
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-gray-700">Open to Friends</span>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -175,39 +217,21 @@ export default function Friends() {
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Name
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Email
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Game
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Mode
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Time
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+        <Table aria-label="Friends Table">
+          <TableHeader>
+            <TableColumn>Name</TableColumn>
+            <TableColumn>Email</TableColumn>
+            <TableColumn>Status</TableColumn>
+            <TableColumn>Game</TableColumn>
+            <TableColumn>Mode</TableColumn>
+            <TableColumn>Time</TableColumn>
+          </TableHeader>
+          <TableBody>
             {filteredProfiles.map((profile) => (
-              <tr key={profile._id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {profile.name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {profile.email}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+              <TableRow key={profile._id}>
+                <TableCell>{profile.name}</TableCell>
+                <TableCell>{profile.email}</TableCell>
+                <TableCell>
                   <span className={`px-2 py-1 rounded-full text-sm ${
                     profile.status === 'Online' ? 'bg-green-100 text-green-800' :
                     profile.status === 'In Game' ? 'bg-blue-100 text-blue-800' :
@@ -217,20 +241,14 @@ export default function Friends() {
                   }`}>
                     {profile.status || 'Offline'}
                   </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {profile.game || 'N/A'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {profile.mode || 'N/A'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {profile.time || 'N/A'}
-                </td>
-              </tr>
+                </TableCell>
+                <TableCell>{profile.game || 'N/A'}</TableCell>
+                <TableCell>{profile.mode || 'N/A'}</TableCell>
+                <TableCell>{profile.time || 'N/A'}</TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
