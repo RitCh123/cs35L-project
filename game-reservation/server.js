@@ -74,6 +74,24 @@ app.get("/api/view/profiles", async (req, res) => {
   }
 });
 
+app.get("/api/view/profile", async (req, res) => {
+  try {
+    const db = client.db(dbName);
+    const { email } = req.query;
+    if (!email) {
+      return res.status(400).json({ message: "Missing email query parameter" });
+    }
+    const profile = await db.collection("profiles").findOne({ email });
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+    res.json(profile);
+  } catch (err) {
+    console.error("Error fetching profile:", err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
 app.post("/api/create/user", async (req, res) => {
   try {
     // alert("Received request:", req.body);
@@ -350,6 +368,47 @@ app.post("/api/update/profile/friends", async (req, res) => {
     res.json({ message: "Friends preference updated successfully" });
   } catch (err) {
     console.error("Error updating friends preference:", err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+app.post("/api/update/profile", async (req, res) => {
+  try {
+    const db = client.db(dbName);
+    const { email, ...fieldsToUpdate } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Missing email" });
+    }
+    if (Object.keys(fieldsToUpdate).length === 0) {
+      return res.status(400).json({ message: "No fields to update" });
+    }
+
+    // Only allow updating certain fields
+    const allowedFields = ["name", "game", "mode", "time"];
+    const update = {};
+    for (const key of allowedFields) {
+      if (fieldsToUpdate[key] !== undefined) {
+        update[key] = fieldsToUpdate[key];
+      }
+    }
+    if (Object.keys(update).length === 0) {
+      return res.status(400).json({ message: "No valid fields to update" });
+    }
+
+    const result = await db.collection("profiles").updateOne(
+      { email },
+      { $set: update },
+      { upsert: false }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    res.json({ message: "Profile updated successfully" });
+  } catch (err) {
+    console.error("Error updating profile:", err);
     res.status(500).send("Internal Server Error");
   }
 });

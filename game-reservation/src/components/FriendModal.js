@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   ModalContent,
@@ -21,6 +21,7 @@ export default function FriendModal({ isOpen, onOpenChange }) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [isEdit, setIsEdit] = useState(false);
 
   const gameOptions = [
     { key: "FIFA", label: "FIFA 23" },
@@ -44,6 +45,33 @@ export default function FriendModal({ isOpen, onOpenChange }) {
     { key: "PS5", label: "PS5" },
   ];
 
+  useEffect(() => {
+    if (isOpen && currentUser) {
+      setLoading(true);
+      setError("");
+      axios
+        .get(`http://localhost:8080/api/view/profile?email=${encodeURIComponent(currentUser.email)}`)
+        .then((res) => {
+          const profile = res.data;
+          setGame(profile.game || "");
+          setMode(profile.mode || "");
+          setTime(profile.time || "");
+          setIsEdit(true);
+        })
+        .catch((err) => {
+          // If not found, treat as create
+          setGame("");
+          setMode("");
+          setTime("");
+          setIsEdit(false);
+        })
+        .finally(() => setLoading(false));
+    } else if (!isOpen) {
+      setSuccess(false);
+      setError("");
+    }
+  }, [isOpen, currentUser]);
+
   const handleProfileCreate = async () => {
     setLoading(true);
     setError("");
@@ -57,15 +85,34 @@ export default function FriendModal({ isOpen, onOpenChange }) {
         time,
       });
       setSuccess(true);
-      setGame("");
-      setMode("");
-      setTime("");
       setTimeout(() => {
         onOpenChange();
         setSuccess(false);
       }, 800);
     } catch (err) {
       setError("Failed to create profile.");
+    }
+    setLoading(false);
+  };
+
+  const handleProfileUpdate = async () => {
+    setLoading(true);
+    setError("");
+    setSuccess(false);
+    try {
+      await axios.post("http://localhost:8080/api/update/profile", {
+        email: currentUser.email,
+        game,
+        mode,
+        time,
+      });
+      setSuccess(true);
+      setTimeout(() => {
+        onOpenChange();
+        setSuccess(false);
+      }, 800);
+    } catch (err) {
+      setError("Failed to update profile.");
     }
     setLoading(false);
   };
@@ -106,7 +153,7 @@ export default function FriendModal({ isOpen, onOpenChange }) {
             className="mb-2"
           />
           {error && <div style={{ color: 'red', fontSize: 14 }}>{error}</div>}
-          {success && <div style={{ color: 'green', fontSize: 14 }}>Profile created!</div>}
+          {success && <div style={{ color: 'green', fontSize: 14 }}>{isEdit ? 'Profile updated!' : 'Profile created!'}</div>}
         </ModalBody>
         <ModalFooter>
           <Button color="danger" variant="light" onPress={onOpenChange}>
@@ -115,10 +162,10 @@ export default function FriendModal({ isOpen, onOpenChange }) {
           <Button
             color="success"
             isLoading={loading}
-            onPress={handleProfileCreate}
+            onPress={isEdit ? handleProfileUpdate : handleProfileCreate}
             isDisabled={!game || !mode || !time}
           >
-            Create Profile
+            {isEdit ? 'Update Profile' : 'Create Profile'}
           </Button>
         </ModalFooter>
       </ModalContent>
