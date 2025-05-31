@@ -36,28 +36,28 @@ export default function ProfileTable({ profiles }) {
           Next →
         </button>
       </div>
-      <Table aria-label="User profiles">
-        <TableHeader>
-          <TableColumn>NAME</TableColumn>
-          <TableColumn>EMAIL</TableColumn>
-          <TableColumn>STATUS</TableColumn>
+    <Table aria-label="User profiles">
+      <TableHeader> 
+        <TableColumn>NAME</TableColumn>
+        <TableColumn>EMAIL</TableColumn>
+        <TableColumn>STATUS</TableColumn>
           <TableColumn>GAME</TableColumn>
           <TableColumn>MODE</TableColumn>
           <TableColumn>TIME</TableColumn>
-        </TableHeader>
-        <TableBody>
+      </TableHeader>
+      <TableBody>
           {paginatedProfiles.map((profile, index) => (
             <TableRow key={profile._id || index}>
-              <TableCell>{profile.name}</TableCell>
-              <TableCell>{profile.email}</TableCell>
-              <TableCell>{profile.status || 'Offline'}</TableCell>
+            <TableCell>{profile.name}</TableCell>
+            <TableCell>{profile.email}</TableCell>
+            <TableCell>{profile.status || 'Offline'}</TableCell>
               <TableCell>{profile.game || 'N/A'}</TableCell>
               <TableCell>{profile.mode || 'N/A'}</TableCell>
               <TableCell>{profile.time || 'N/A'}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
     </div>
   );
-}
+}  

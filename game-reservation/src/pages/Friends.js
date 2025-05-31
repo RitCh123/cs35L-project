@@ -20,6 +20,7 @@ export default function Friends() {
   const [filteredProfiles, setFilteredProfiles] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState('Offline');
   const [openToFriends, setOpenToFriends] = useState(false);
+  const [sentEmails, setSentEmails] = useState(new Set());
 
   // Effect for initial data loading and setting current user's preferences
   useEffect(() => {
@@ -127,6 +128,50 @@ export default function Friends() {
     } catch (err) {
       console.error("Error updating friends preference:", err);
       setOpenToFriends(previousOpenToFriends);
+    }
+  };
+
+  const handleAddFriend = async (friendProfileId) => {
+    if (!currentUser) {
+      console.error("No current user found for handleAddFriend");
+      return;
+    }
+    try {
+      // Call /api/friends/add
+      const addResponse = await fetch('http://localhost:8080/api/friends/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestorEmail: currentUser.email,
+          friendProfileId: friendProfileId
+        }),
+      });
+
+      if (!addResponse.ok) {
+        const errorData = await addResponse.json().catch(() => ({ message: 'Failed to add friend (server error)' }));
+        throw new Error(errorData.message || 'Failed to add friend');
+      }
+
+      // Call /api/friends/request to send email notification
+      const emailResponse = await fetch('http://localhost:8080/api/friends/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestorEmail: currentUser.email, // Kept for consistency, backend primarily uses requestorName for email text
+          requestorName: currentUser.displayName || currentUser.email,
+          friendProfileId: friendProfileId
+        }),
+      });
+
+      if (!emailResponse.ok) {
+        const emailErrorData = await emailResponse.json().catch(() => ({ message: 'Failed to send friend request email (server error)' }));
+        console.error('Failed to send friend request email:', emailErrorData.message);
+        // Still proceed to update UI as friend might have been added, and email is a notification.
+      }
+
+      setSentEmails(prev => new Set(prev).add(friendProfileId));
+    } catch (error) {
+      console.error('Error in handleAddFriend:', error.message);
     }
   };
 
@@ -256,22 +301,31 @@ export default function Friends() {
                 <TableCell>
                   {profile.email !== currentUser?.email && (
                     <button
-                      onClick={() => console.log(`Friend request sent to ${profile.email}`)}
+                      onClick={() => handleAddFriend(profile._id)}
+                      disabled={sentEmails.has(profile._id)}
                       style={{
                         borderRadius: "4px",
                         padding: "4px 8px",
-                        backgroundColor: "#2563eb",
+                        backgroundColor: sentEmails.has(profile._id) ? "#9ca3af" : "#2563eb",
                         color: "white",
                         fontWeight: "bold",
                         fontSize: "14px",
                         border: "none",
-                        cursor: "pointer",
+                        cursor: sentEmails.has(profile._id) ? "not-allowed" : "pointer",
                         boxShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
                       }}
-                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#1d4ed8")}
-                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#2563eb")}
+                      onMouseOver={(e) => {
+                        if (!sentEmails.has(profile._id)) {
+                          e.currentTarget.style.backgroundColor = "#1d4ed8";
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (!sentEmails.has(profile._id)) {
+                          e.currentTarget.style.backgroundColor = "#2563eb";
+                        }
+                      }}
                     >
-                      Friend
+                      {sentEmails.has(profile._id) ? 'Email sent' : 'Friend'}
                     </button>
                   )}
                 </TableCell>

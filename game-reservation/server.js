@@ -2,6 +2,7 @@ const { MongoClient, ObjectId } = require("mongodb");
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
+const nodemailer = require("nodemailer");
 
 const app = express();
 app.use(cors({ origin: "http://localhost:3000" }));
@@ -22,6 +23,35 @@ const adminEmails = ["rchavali@g.ucla.edu", "nks676@g.ucla.edu", "nikhildewitt@g
 
 // Define valid status options
 const VALID_STATUSES = ['Online', 'Offline', 'In Game', 'Away', 'Busy'];
+
+// Log environment variables for debugging Nodemailer
+console.log("DEBUG: EMAIL_USER from .env:", process.env.EMAIL_USER);
+console.log("DEBUG: EMAIL_PASS from .env (length only):", process.env.EMAIL_PASS ? process.env.EMAIL_PASS.length : "undefined");
+
+// Nodemailer transporter setup (using environment variables)
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER, // Your Gmail address from .env
+    pass: process.env.EMAIL_PASS, // Your Gmail App Password from .env
+  },
+});
+
+// Function to send email
+async function sendEmail(to, subject, text) {
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to,
+      subject,
+      text,
+    });
+    console.log(`Email sent to ${to}`);
+  } catch (error) {
+    console.error(`Error sending email to ${to}:`, error);
+    // Do not throw error here to allow main operation to continue if email fails
+  }
+}
 
 async function connectToDatabase() {
   try {
@@ -410,6 +440,50 @@ app.post("/api/update/profile", async (req, res) => {
   } catch (err) {
     console.error("Error updating profile:", err);
     res.status(500).send("Internal Server Error");
+  }
+});
+
+// New endpoint to handle adding a friend (actual friend logic like DB update to be added)
+app.post('/api/friends/add', async (req, res) => {
+  const { requestorEmail, friendProfileId } = req.body;
+  console.log(`Friend add request from ${requestorEmail} for profile ID ${friendProfileId}`);
+  // In a full implementation, you would update your database here to establish the friend relationship.
+  // For now, we'll just acknowledge the request.
+  // Example:
+  // const db = client.db(dbName);
+  // await db.collection("users").updateOne({ email: requestorEmail }, { $addToSet: { friends: friendProfileId } });
+  // await db.collection("users").updateOne({ _id: new ObjectId(friendProfileId) }, { $addToSet: { friendOf: requestorEmail } }); // Or similar logic
+  res.status(200).json({ message: 'Friend add request received' });
+});
+
+// Corrected endpoint to send email when a user is added as a friend
+app.post('/api/friends/request', async (req, res) => {
+  const { requestorName, friendProfileId } = req.body; // requestorEmail also available if needed
+  try {
+    const db = client.db(dbName);
+    const friendProfile = await db.collection("profiles").findOne({ _id: new ObjectId(friendProfileId) });
+
+    if (!friendProfile) {
+      return res.status(404).json({ message: 'Friend profile not found' });
+    }
+    if (!friendProfile.email) {
+      return res.status(400).json({ message: 'Friend profile does not have an email address' });
+    }
+
+    const subject = 'New Friend Request';
+    const text = `${requestorName} has added you as a friend on Eclipse Gaming!`; // Using requestorName
+
+    console.log("!!!! MARKER: ABOUT TO CALL sendEmail !!!!"); // Unique marker log
+    await sendEmail(friendProfile.email, subject, text); // Uncommented actual email sending
+    // console.log(`Email to be sent to: ${friendProfile.email}, Subject: ${subject}, Text: ${text}`); // Commented out test log
+
+    res.status(200).json({ message: 'Friend request email process initiated' });
+  } catch (error) {
+    console.error('Error processing friend request email:', error);
+    if (error instanceof ObjectId.InvalidId) { // Handle specific error for invalid ObjectId
+        return res.status(400).json({ message: 'Invalid friendProfileId format' });
+    }
+    res.status(500).json({ message: 'Error processing friend request email' });
   }
 });
 
