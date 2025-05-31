@@ -458,32 +458,64 @@ app.post('/api/friends/add', async (req, res) => {
 
 // Corrected endpoint to send email when a user is added as a friend
 app.post('/api/friends/request', async (req, res) => {
-  const { requestorName, friendProfileId } = req.body; // requestorEmail also available if needed
+  const { requestorName, friendProfileId, customMessage } = req.body;
+  let friendEmail;
+  // let friendName; // Optional: for logging or more personalized fallback
+
   try {
     const db = client.db(dbName);
-    const friendProfile = await db.collection("profiles").findOne({ _id: new ObjectId(friendProfileId) });
 
-    if (!friendProfile) {
-      return res.status(404).json({ message: 'Friend profile not found' });
-    }
-    if (!friendProfile.email) {
-      return res.status(400).json({ message: 'Friend profile does not have an email address' });
+    if (friendProfileId === "dummy-nikhil") {
+      // Handle the dummy profile directly
+      friendEmail = "nikhildewitt@g.ucla.edu"; // Updated email for the dummy profile
+      // friendName = "Nikhil (Dummy)"; // For clarity if needed elsewhere
+      if (!friendEmail) { // Should not happen if hardcoded correctly
+          console.error("Dummy profile email is not configured on the server."); // Server-side log
+          return res.status(500).json({ message: 'Dummy friend profile email configuration error on server' });
+      }
+    } else {
+      // For actual profiles, look up in DB
+      let mongoObjectId;
+      try {
+        // Ensure ObjectId is required if not already at the top of the file
+        // const { ObjectId } = require("mongodb"); // Usually at the top
+        mongoObjectId = new ObjectId(friendProfileId);
+      } catch (bsonError) {
+        // This catches if friendProfileId is not a valid format for ObjectId
+        console.error('Invalid friendProfileId format for ObjectId:', friendProfileId, bsonError.message);
+        return res.status(400).json({ message: `Invalid friendProfileId format. It must be a 24 character hex string.` });
+      }
+
+      const friendProfile = await db.collection("profiles").findOne({ _id: mongoObjectId });
+
+      if (!friendProfile) {
+        return res.status(404).json({ message: 'Friend profile not found for ID: ' + friendProfileId });
+      }
+      if (!friendProfile.email) {
+        return res.status(400).json({ message: 'Friend profile (' + friendProfileId + ') does not have an email address' });
+      }
+      friendEmail = friendProfile.email;
+      // friendName = friendProfile.name;
     }
 
     const subject = 'New Friend Request';
-    const text = `${requestorName} has added you as a friend on Eclipse Gaming!`; // Using requestorName
+    let text = `${requestorName} has added you as a friend on Eclipse Gaming!`;
+    if (customMessage && customMessage.trim() !== "") {
+      text += `\n\nThey sent you a message:\n${customMessage.trim()}`;
+    }
 
-    console.log("!!!! MARKER: ABOUT TO CALL sendEmail !!!!"); // Unique marker log
-    await sendEmail(friendProfile.email, subject, text); // Uncommented actual email sending
-    // console.log(`Email to be sent to: ${friendProfile.email}, Subject: ${subject}, Text: ${text}`); // Commented out test log
+    // console.log("!!!! MARKER: ABOUT TO CALL sendEmail !!!!");
+    await sendEmail(friendEmail, subject, text);
+    // console.log(`Email to be sent to: ${friendEmail}, Subject: ${subject}, Text: ${text}`);
 
     res.status(200).json({ message: 'Friend request email process initiated' });
   } catch (error) {
+    // General error catch for other unexpected issues
     console.error('Error processing friend request email:', error);
-    if (error instanceof ObjectId.InvalidId) { // Handle specific error for invalid ObjectId
-        return res.status(400).json({ message: 'Invalid friendProfileId format' });
-    }
-    res.status(500).json({ message: 'Error processing friend request email' });
+    // Removed the problematic 'instanceof ObjectId.InvalidId' check.
+    // The BSONError for invalid ID format is now handled above for non-dummy IDs.
+    // For other errors (like sendEmail failure itself), a generic 500 is appropriate.
+    res.status(500).json({ message: 'Error processing friend request email. Details: ' + error.message });
   }
 });
 
