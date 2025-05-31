@@ -57,10 +57,17 @@ export default function Friends() {
 
   // Effect for filtering profiles based on search query or when profiles data changes
   useEffect(() => {
-    const filtered = profiles.filter(profile => 
-      profile.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      profile.email?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filtered = profiles.filter(profile => {
+      const searchLower = searchQuery.toLowerCase();
+      return (
+        profile.name?.toLowerCase().includes(searchLower) ||
+        profile.email?.toLowerCase().includes(searchLower) ||
+        profile.status?.toLowerCase().includes(searchLower) ||
+        profile.game?.toLowerCase().includes(searchLower) ||
+        profile.mode?.toLowerCase().includes(searchLower) ||
+        profile.time?.toLowerCase().includes(searchLower)
+      );
+    });
     setFilteredProfiles(filtered);
   }, [searchQuery, profiles]);
   
@@ -225,6 +232,7 @@ export default function Friends() {
             <TableColumn>Game</TableColumn>
             <TableColumn>Mode</TableColumn>
             <TableColumn>Time</TableColumn>
+            <TableColumn>Action</TableColumn>
           </TableHeader>
           <TableBody>
             {filteredProfiles.map((profile) => (
@@ -245,6 +253,28 @@ export default function Friends() {
                 <TableCell>{profile.game || 'N/A'}</TableCell>
                 <TableCell>{profile.mode || 'N/A'}</TableCell>
                 <TableCell>{profile.time || 'N/A'}</TableCell>
+                <TableCell>
+                  {profile.email !== currentUser?.email && (
+                    <button
+                      onClick={() => console.log(`Friend request sent to ${profile.email}`)}
+                      style={{
+                        borderRadius: "4px",
+                        padding: "4px 8px",
+                        backgroundColor: "#2563eb",
+                        color: "white",
+                        fontWeight: "bold",
+                        fontSize: "14px",
+                        border: "none",
+                        cursor: "pointer",
+                        boxShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+                      }}
+                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#1d4ed8")}
+                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#2563eb")}
+                    >
+                      Friend
+                    </button>
+                  )}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
