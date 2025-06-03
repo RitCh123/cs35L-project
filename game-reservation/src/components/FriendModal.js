@@ -18,6 +18,7 @@ export default function FriendModal({ isOpen, onOpenChange, onProfileUpdated }) 
   const [game, setGame] = useState("");
   const [mode, setMode] = useState("");
   const [time, setTime] = useState("");
+  const [playStyle, setPlayStyle] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -45,6 +46,11 @@ export default function FriendModal({ isOpen, onOpenChange, onProfileUpdated }) 
     { key: "PS5", label: "PS5" },
   ];
 
+  const playStyleOptions = [
+    { key: "Casual", label: "Casual" },
+    { key: "Competitive", label: "Competitive" },
+  ];
+
   useEffect(() => {
     if (isOpen && currentUser) {
       setLoading(true);
@@ -56,6 +62,7 @@ export default function FriendModal({ isOpen, onOpenChange, onProfileUpdated }) 
           setGame(profile.game || "");
           setMode(profile.mode || "");
           setTime(profile.time || "");
+          setPlayStyle(profile.playStyle || "");
           setIsEdit(true);
         })
         .catch((err) => {
@@ -63,6 +70,7 @@ export default function FriendModal({ isOpen, onOpenChange, onProfileUpdated }) 
           setGame("");
           setMode("");
           setTime("");
+          setPlayStyle("");
           setIsEdit(false);
         })
         .finally(() => setLoading(false));
@@ -83,6 +91,7 @@ export default function FriendModal({ isOpen, onOpenChange, onProfileUpdated }) 
         game,
         mode,
         time,
+        playStyle,
       });
       setSuccess(true);
       setTimeout(() => {
@@ -106,6 +115,7 @@ export default function FriendModal({ isOpen, onOpenChange, onProfileUpdated }) 
         game,
         mode,
         time,
+        playStyle,
       });
       setSuccess(true);
       setTimeout(() => {
@@ -122,14 +132,14 @@ export default function FriendModal({ isOpen, onOpenChange, onProfileUpdated }) 
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
       <ModalContent>
-        <ModalHeader>Friends</ModalHeader>
+        <ModalHeader>Update Profile</ModalHeader>
         <ModalBody>
           {/* Profile creation fields (no name/email, no search) */}
           <Select
             label="Game"
             placeholder="Select your favorite game"
             selectedKeys={game ? [game] : []}
-            onChange={e => setGame(e.target.value)}
+            onSelectionChange={(keys) => setGame(Array.from(keys)[0] || "")}
             className="mb-2"
           >
             {gameOptions.map(opt => (
@@ -140,7 +150,7 @@ export default function FriendModal({ isOpen, onOpenChange, onProfileUpdated }) 
             label="Mode"
             placeholder="Select your mode of play"
             selectedKeys={mode ? [mode] : []}
-            onChange={e => setMode(e.target.value)}
+            onSelectionChange={(keys) => setMode(Array.from(keys)[0] || "")}
             className="mb-2"
           >
             {modeOptions.map(opt => (
@@ -154,6 +164,17 @@ export default function FriendModal({ isOpen, onOpenChange, onProfileUpdated }) 
             onChange={e => setTime(e.target.value)}
             className="mb-2"
           />
+          <Select
+            label="Play Style"
+            placeholder="Select your play style"
+            selectedKeys={playStyle ? [playStyle] : []}
+            onSelectionChange={(keys) => setPlayStyle(Array.from(keys)[0] || "")}
+            className="mb-2"
+          >
+            {playStyleOptions.map(opt => (
+              <SelectItem key={opt.key}>{opt.label}</SelectItem>
+            ))}
+          </Select>
           {error && <div style={{ color: 'red', fontSize: 14 }}>{error}</div>}
           {success && <div style={{ color: 'green', fontSize: 14 }}>{isEdit ? 'Profile updated!' : 'Profile created!'}</div>}
         </ModalBody>
@@ -165,7 +186,7 @@ export default function FriendModal({ isOpen, onOpenChange, onProfileUpdated }) 
             color="success"
             isLoading={loading}
             onPress={isEdit ? handleProfileUpdate : handleProfileCreate}
-            isDisabled={!game || !mode || !time}
+            isDisabled={!game || !mode || !time || !playStyle}
           >
             {isEdit ? 'Update Profile' : 'Create Profile'}
           </Button>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../firebase/AuthContext';
-import { Button, ButtonGroup } from "@heroui/button";
+import { Button } from "@heroui/button";
 import { useDisclosure } from "@heroui/react";
 import axios from 'axios';
 import { Link } from 'react-router-dom';
@@ -189,7 +189,6 @@ export default function Friends() {
       <div className="flex justify-between items-center mb-6">
         <div className="flex-1 flex items-center">
           <Link to="/">
-
             <button
               style={{
                 borderRadius: "50%",
@@ -219,39 +218,18 @@ export default function Friends() {
               </svg>
             </button>
           </Link>
-          <Button
-          style={{
-            position: "fixed",
-            bottom: "90px",
-            right: "20px",
-            borderRadius: "50%",
-            width: "50px",
-            height: "50px",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            fontSize: "24px",
-            backgroundColor: "#22c55e", // green
-            zIndex: 1000,
-          }}
-          isIconOnly
-          color="success"
-          onPress={onOpenProfile}
-        >
-          <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
-            <path
-              d="M10 4v12M4 10h12"
-              stroke="white"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          </svg>
-        </Button>
         </div>
         <div className="flex-1 flex justify-center">
           <h1 className="text-2xl font-bold">Friends</h1>
         </div>
-        <div className="flex-1 flex items-center justify-end gap-12">
+        <div className="flex-1 flex items-center justify-end gap-3">
+          <Button
+            color="primary"
+            variant="solid"
+            onPress={onOpenProfile}
+          >
+            Update Profile
+          </Button>
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-gray-700">Open to Friends</span>
             <label className="relative inline-flex items-center cursor-pointer">
