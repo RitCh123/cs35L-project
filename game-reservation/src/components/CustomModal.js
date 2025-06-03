@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../firebase/AuthContext";
 
 import {
@@ -8,100 +8,67 @@ import {
   ModalBody,
   ModalFooter,
   Button,
-  useDisclosure,
   Checkbox,
   Input,
   Link,
 } from "@heroui/react";
 
-import { Autocomplete, AutocompleteItem } from "@heroui/react";
-
 import { Select, SelectItem } from "@heroui/react";
 
 import axios from "axios";
-import { render } from "@testing-library/react";
-
-export const MailIcon = (props) => {
-  return (
-    <svg
-      aria-hidden="true"
-      fill="none"
-      focusable="false"
-      height="1em"
-      role="presentation"
-      viewBox="0 0 24 24"
-      width="1em"
-      {...props}
-    >
-      <path
-        d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-};
 
 export default function CustomModal({
   isOpen,
-  onOpen,
   onOpenChange,
   onReservationCreated,
   renderInput = false,
 }) {
   const { currentUser } = useAuth();
-  const modes = [
-    { key: "PC", label: "PC", isConsole: false },
-    { key: "XBOX", label: "XBOX", isConsole: true },
-    { key: "SWITCH", label: "SWITCH", isConsole: true },
-    { key: "PS5", label: "PS5", isConsole: true },
-  ];
-
-  const games = [
-    { key: "FIFA", label: "FIFA 23" },
-    { key: "NBA", label: "NBA 2K23" },
-    { key: "COD", label: "Call of Duty: Modern Warfare II" },
-    { key: "MADDEN", label: "Madden NFL 23" },
-    { key: "GOW", label: "God of War Ragnarök" },
-    { key: "ZELDA", label: "The Legend of Zelda: Tears of the Kingdom" },
-    { key: "HORIZON", label: "Horizon Forbidden West" },
-    { key: "RDR2", label: "Red Dead Redemption 2" },
-    { key: "FARCRY", label: "Far Cry 6" },
-    { key: "MINECRAFT", label: "Minecraft" },
-    { key: "FORTNITE", label: "Fortnite" },
-    { key: "VALORANT", label: "Valorant" },
-    { key: "LEAGUE", label: "League of Legends" },
-  ];
-
-  const listOfPC = [
-    "A",
-    "B",
-    "C",
-    "D",
-    "E",
-    "F",
-    "G",
-    "H",
-    "I",
-    "J",
-    "K",
-    "L",
-    "M",
-    "N",
-  ];
-
-  const [selectedGame, setSelectedGame] = useState(null);
-  const [selectedMode, setSelectedMode] = useState(null);
-  const [selectedConsoleType, setSelectedConsoleType] = useState(null);
-
-  const modeOptions = [
+  
+  const reservationTypeOptions = [
     { key: "PC", label: "PC" },
     { key: "CONSOLE", label: "Console" },
   ];
   const consoleTypeOptions = [
-    { key: "Switch", label: "Switch" },
-    { key: "Xbox", label: "Xbox" },
+    { key: "SWITCH", label: "Switch" },
+    { key: "XBOX", label: "Xbox" },
     { key: "PS5", label: "PS5" },
   ];
+
+  const pcGameOptions = [
+    { key: "ANY", label: "Any Game" },
+    { key: "APEX", label: "Apex Legends" },
+  ];
+
+  const partySizeOptions = [
+    { key: 1, label: "1 Player" },
+    { key: 2, label: "2 Players" },
+    { key: 3, label: "3 Players" },
+    { key: 4, label: "4 Players" },
+  ];
+
+  const [selectedReservationType, setSelectedReservationType] = useState(null);
+  const [selectedConsoleType, setSelectedConsoleType] = useState(null);
+  const [partySize, setPartySize] = useState(1);
+  const [seatTogether, setSeatTogether] = useState(false);
+  const [preferredGame, setPreferredGame] = useState("ANY");
+
+  const [inputName, setInputName] = useState("");
+  const [inputEmail, setInputEmail] = useState("");
+
+  useEffect(() => {
+    if (currentUser) {
+      setInputName(currentUser.displayName || "");
+      setInputEmail(currentUser.email || "");
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    setSelectedConsoleType(null);
+    setPartySize(1);
+    setSeatTogether(false);
+    setPreferredGame("ANY");
+  }, [selectedReservationType]);
 
   const sendRequest = async (data) => {
     try {
@@ -109,19 +76,52 @@ export default function CustomModal({
         "http://localhost:8080/api/create/reservation",
         data
       );
-      console.log("Reservation created:", response.data);
+      console.log("Reservation response:", response.data);
+      if (response.data && response.data.message) {
+        alert(`Reservation Status: ${response.data.message}`);
+      }
+      return response.data;
     } catch (error) {
-      console.error("Error creating reservation:", error);
+      console.error("Error creating reservation:", error.response ? error.response.data : error.message);
+      alert("Failed to create reservation: " + (error.response && error.response.data && error.response.data.message ? error.response.data.message : "Server error"));
+      throw error;
     }
   };
 
-  const [inputValue, setInputValue] = useState("");
-  const [emailValue, setEmailValue] = useState("");
+  const handleSubmit = async () => {
+    if (!currentUser) {
+      alert("Please sign in to make a reservation.");
+      return;
+    }
 
-  const [choosePC, setChoosePC] = useState("");
+    const reservationData = {
+      name: currentUser.displayName || inputName,
+      email: currentUser.email || inputEmail,
+      reservationType: selectedReservationType,
+    };
 
-  const handleChange = (event) => {
-    setInputValue(event.target.value.toUpperCase());
+    if (selectedReservationType === "PC") {
+      reservationData.partySize = partySize;
+      reservationData.seatTogether = seatTogether;
+      reservationData.preferredGame = preferredGame === "ANY" ? null : "Apex Legends";
+    } else if (selectedReservationType === "CONSOLE") {
+      reservationData.consoleType = selectedConsoleType;
+    }
+
+    try {
+      await sendRequest(reservationData);
+      if (onReservationCreated) onReservationCreated();
+      onOpenChange(false);
+    } catch (error) {
+      console.log("Submit failed, modal remains open for correction.");
+    }
+  };
+  
+  const isSubmitDisabled = () => {
+    if (!selectedReservationType) return true;
+    if (selectedReservationType === "CONSOLE" && !selectedConsoleType) return true;
+    if (selectedReservationType === "PC" && !partySize) return true;
+    return false;
   };
 
   return (
@@ -133,64 +133,87 @@ export default function CustomModal({
               <ModalHeader className="flex flex-col gap-1">
                 Create a Reservation
               </ModalHeader>
-              <ModalBody>
-                {renderInput && (
-                  <>
-                    <Input
-                      className="max-w-base"
-                      label="Full Name"
-                      placeholder="Enter your full name"
-                      value={inputValue}
-                      onChange={handleChange}
-                    />
-                    <Input
-                      className="max-w-base"
-                      label="Email"
-                      placeholder="Enter your email"
-                      onChange={(e) => setEmailValue(e.target.value)}
-                    />
-                  </>
+              <ModalBody className="gap-4">
+                {currentUser && (
+                  <div className="mb-4">
+                    <p><strong>Name:</strong> {currentUser.displayName || "N/A"}</p>
+                    <p><strong>Email:</strong> {currentUser.email || "N/A"}</p>
+                  </div>
                 )}
+                
                 <Select
+                  label="Reservation Type"
+                  placeholder="Select PC or Console"
+                  selectedKeys={selectedReservationType ? [selectedReservationType] : []}
+                  onChange={(e) => setSelectedReservationType(e.target.value)}
                   className="max-w-base"
-                  label="Mode of play"
-                  placeholder="Select your mode of play"
-                  onChange={(e) => {
-                    setSelectedMode(e.target.value);
-                    setSelectedConsoleType(null); // Reset console type if mode changes
-                  }}
                 >
-                  {modeOptions.map((mode) => (
-                    <SelectItem key={mode.key}>{mode.label}</SelectItem>
+                  {reservationTypeOptions.map((type) => (
+                    <SelectItem key={type.key} value={type.key}>
+                      {type.label}
+                    </SelectItem>
                   ))}
                 </Select>
-                {selectedMode === "CONSOLE" && (
+
+                {selectedReservationType === "CONSOLE" && (
                   <Select
-                    className="max-w-base"
                     label="Console Type"
                     placeholder="Select console type"
+                    selectedKeys={selectedConsoleType ? [selectedConsoleType] : []}
                     onChange={(e) => setSelectedConsoleType(e.target.value)}
+                    className="max-w-base mt-4"
                   >
                     {consoleTypeOptions.map((console) => (
-                      <SelectItem key={console.key}>{console.label}</SelectItem>
+                      <SelectItem key={console.key} value={console.key}>
+                        {console.label}
+                      </SelectItem>
                     ))}
                   </Select>
                 )}
-                {selectedMode === "PC" && (
+
+                {selectedReservationType === "PC" && (
                   <>
                     <Select
-                      className="max-w-base"
-                      label="PC"
-                      placeholder="Select a PC"
-                      onChange={(e) => setChoosePC(e.target.value)}
+                      label="Party Size"
+                      placeholder="Select party size"
+                      selectedKeys={partySize ? [partySize.toString()] : []}
+                      onChange={(e) => setPartySize(parseInt(e.target.value, 10))}
+                      className="max-w-base mt-4"
                     >
-                      {listOfPC.map((pc, index) => (
-                        <SelectItem key={pc}>{pc}</SelectItem>
+                      {partySizeOptions.map((size) => (
+                        <SelectItem key={size.key.toString()} value={size.key.toString()}>
+                          {size.label}
+                        </SelectItem>
                       ))}
                     </Select>
-                    <Link href="/pcs" target="_blank"><p className="text-sm" style={{ color: "blue" }}>
-                      What PC should I use?
-                    </p></Link>
+
+                    <Select
+                      label="Preferred Game (PC)"
+                      placeholder="Select preferred game"
+                      selectedKeys={preferredGame ? [preferredGame] : []}
+                      onChange={(e) => setPreferredGame(e.target.value)}
+                      className="max-w-base mt-4"
+                    >
+                      {pcGameOptions.map((game) => (
+                        <SelectItem key={game.key} value={game.key}>
+                          {game.label}
+                        </SelectItem>
+                      ))}
+                    </Select>
+                    <p className="text-xs mt-1">Note: Apex Legends is only on PCs J & M.</p>
+                    
+                    <div className="mt-4 flex items-center">
+                        <Checkbox 
+                            isSelected={seatTogether} 
+                            onValueChange={setSeatTogether}
+                        />
+                        <span className="ml-2 text-sm">Attempt to seat party together?</span>
+                    </div>
+                    <Link href="/pcs" target="_blank">
+                        <p className="text-sm mt-2" style={{ color: "blue" }}>
+                            View PC Layout (A-M)
+                        </p>
+                    </Link>
                   </>
                 )}
               </ModalBody>
@@ -200,33 +223,10 @@ export default function CustomModal({
                 </Button>
                 <Button
                   color="success"
-                  onPress={async () => {
-                    console.log(
-                      (renderInput && inputValue) || currentUser.email
-                    );
-                    const reservation = {
-                      name:
-                        (renderInput && inputValue) || currentUser.displayName,
-                      email: (renderInput && emailValue) || currentUser.email,
-                      mode: selectedMode,
-                    };
-                    if (selectedMode === "CONSOLE") {
-                      reservation.consoleType = selectedConsoleType;
-                    }
-                    if (selectedMode === "PC") {
-                      reservation.pcLetter = choosePC;
-                    }
-                    await sendRequest(reservation);
-                    if (onReservationCreated) onReservationCreated();
-                    onClose();
-                  }}
-                  isDisabled={
-                    !selectedMode ||
-                    (selectedMode === "CONSOLE" && !selectedConsoleType) ||
-                    (renderInput && !inputValue && !emailValue)
-                  }
+                  onPress={handleSubmit}
+                  isDisabled={isSubmitDisabled()}
                 >
-                  Create
+                  Create Reservation
                 </Button>
               </ModalFooter>
             </>
