@@ -1,9 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../firebase/AuthContext';
+import { Button, ButtonGroup } from "@heroui/button";
+import { useDisclosure } from "@heroui/react";
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 
+import FriendModal from "../components/FriendModal.js";
+
+
 export default function Friends() {
+
+  const {
+    isOpen: isProfileOpen,
+    onOpen: onOpenProfile,
+    onOpenChange: onProfileOpenChange,
+  } = useDisclosure();
+
   const { currentUser } = useAuth();
   const [profiles, setProfiles] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -167,6 +179,11 @@ export default function Friends() {
     }
   };
 
+  const handleProfileUpdated = async () => {
+    // Refresh the profiles list when a profile is created or updated
+    await refreshProfileListFromServer();
+  };
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
@@ -202,6 +219,34 @@ export default function Friends() {
               </svg>
             </button>
           </Link>
+          <Button
+          style={{
+            position: "fixed",
+            bottom: "90px",
+            right: "20px",
+            borderRadius: "50%",
+            width: "50px",
+            height: "50px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            fontSize: "24px",
+            backgroundColor: "#22c55e", // green
+            zIndex: 1000,
+          }}
+          isIconOnly
+          color="success"
+          onPress={onOpenProfile}
+        >
+          <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
+            <path
+              d="M10 4v12M4 10h12"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        </Button>
         </div>
         <div className="flex-1 flex justify-center">
           <h1 className="text-2xl font-bold">Friends</h1>
@@ -360,6 +405,13 @@ export default function Friends() {
           </div>
         </div>
       )}
+      
+      {/* Add the FriendModal component */}
+      <FriendModal 
+        isOpen={isProfileOpen} 
+        onOpenChange={onProfileOpenChange} 
+        onProfileUpdated={handleProfileUpdated}
+      />
     </div>
   );
 } 

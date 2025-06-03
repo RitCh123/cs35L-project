@@ -25,8 +25,9 @@ function isUCLAEmail(email) {
 function isAdmin(email) {
   const adminEmails = [
     'rchavali@g.ucla.edu',
-    'nks676@g.ucla.edu'
-  ];
+    'nks676@g.ucla.edu',
+    'nikhildewitt@g.ucla.edu',
+    ];
   return adminEmails.map(e => e.toLowerCase()).includes(email.toLowerCase());
 }
 

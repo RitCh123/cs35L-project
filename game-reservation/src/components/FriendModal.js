@@ -13,7 +13,7 @@ import {
 import { useAuth } from "../firebase/AuthContext";
 import axios from "axios";
 
-export default function FriendModal({ isOpen, onOpenChange }) {
+export default function FriendModal({ isOpen, onOpenChange, onProfileUpdated }) {
   const { currentUser } = useAuth();
   const [game, setGame] = useState("");
   const [mode, setMode] = useState("");
@@ -89,6 +89,7 @@ export default function FriendModal({ isOpen, onOpenChange }) {
         onOpenChange();
         setSuccess(false);
       }, 800);
+      onProfileUpdated && onProfileUpdated();
     } catch (err) {
       setError("Failed to create profile.");
     }
@@ -111,40 +112,11 @@ export default function FriendModal({ isOpen, onOpenChange }) {
         onOpenChange();
         setSuccess(false);
       }, 800);
+      onProfileUpdated && onProfileUpdated();
     } catch (err) {
       setError("Failed to update profile.");
     }
     setLoading(false);
-  };
-
-  const handleAddFriend = async (friendId) => {
-    try {
-      const response = await fetch('/api/friends/add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: currentUser.uid, friendId }),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to add friend');
-      }
-      // Call the new endpoint to send email notification
-      const emailResponse = await fetch('/api/friends/request', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: currentUser.uid, friendId }),
-      });
-      if (!emailResponse.ok) {
-        console.error('Failed to send friend request email');
-      }
-      setShowModal(false);
-      onFriendAdded();
-    } catch (error) {
-      console.error('Error adding friend:', error);
-    }
   };
 
   return (
