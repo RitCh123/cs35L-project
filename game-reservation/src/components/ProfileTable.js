@@ -40,7 +40,6 @@ export default function ProfileTable({ profiles }) {
       <TableHeader> 
         <TableColumn>NAME</TableColumn>
         <TableColumn>EMAIL</TableColumn>
-        <TableColumn>STATUS</TableColumn>
           <TableColumn>GAME</TableColumn>
           <TableColumn>MODE</TableColumn>
           <TableColumn>TIME</TableColumn>
@@ -50,7 +49,6 @@ export default function ProfileTable({ profiles }) {
             <TableRow key={profile._id || index}>
             <TableCell>{profile.name}</TableCell>
             <TableCell>{profile.email}</TableCell>
-            <TableCell>{profile.status || 'Offline'}</TableCell>
               <TableCell>{profile.game || 'N/A'}</TableCell>
               <TableCell>{profile.mode || 'N/A'}</TableCell>
               <TableCell>{profile.time || 'N/A'}</TableCell>
