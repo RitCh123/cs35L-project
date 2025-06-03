@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../firebase/AuthContext";
+import { useDisclosure } from "@heroui/react";
 
 import {
   Modal,

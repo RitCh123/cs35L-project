@@ -101,7 +101,7 @@ function AppContent() {
         console.error("Error fetching reservations:", error);
         alert("Could not fetch reservations. Please try again later.");
       });
-  };
+  }, []);
 
   const fetchProfiles = async () => {
     try {
@@ -234,8 +234,8 @@ function AppContent() {
         </nav>
         
         <CustomModal 
-            isOpen={isOpen} 
-            onOpenChange={onOpenChange} 
+            isOpen={isReservationOpen} 
+            onOpenChange={onReservationOpenChange} 
             onReservationCreated={fetchReservations} 
         />
 

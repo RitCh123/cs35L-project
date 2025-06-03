@@ -19,7 +19,7 @@ const client = new MongoClient(uri);
 // Database Name
 const dbName = "eclipse_gaming";
 
-const adminEmails = ["rchavali@g.ucla.edu", "nks676@g.ucla.edu"];
+const adminEmails = ["rchavali@g.ucla.edu", "nks676@g.ucla.edu", "nikhildewitt@g.ucla.edu"];
 
 
 // Define valid status options
