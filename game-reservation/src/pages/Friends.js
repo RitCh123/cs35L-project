@@ -239,11 +239,24 @@ export default function Friends() {
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
-                className="sr-only peer"
+                className="sr-only"
                 checked={openToFriends}
                 onChange={handleToggleFriends}
               />
-              <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+              <div 
+                className="relative w-12 h-6 rounded-full border-2 transition-all duration-300 ease-in-out"
+                style={{
+                  backgroundColor: openToFriends ? '#10b981' : '#d1d5db',
+                  borderColor: openToFriends ? '#10b981' : '#9ca3af'
+                }}
+              >
+                <div 
+                  className="w-5 h-5 bg-white rounded-full shadow-lg absolute top-0.5 transition-all duration-300 ease-in-out"
+                  style={{
+                    transform: openToFriends ? 'translateX(20px)' : 'translateX(0px)'
+                  }}
+                ></div>
+              </div>
             </label>
           </div>
           <div className="flex items-center gap-2">
