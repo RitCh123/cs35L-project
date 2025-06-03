@@ -452,8 +452,7 @@ app.post("/api/create/reservation", async (req, res) => {
       reservationType,
       partySize: partySizeStr,
       seatTogether, 
-      preferredGame, 
-      partyMemberEmails, 
+      preferredGame 
     } = req.body;
 
     if (!email || !name || !reservationType) {
@@ -465,7 +464,6 @@ app.post("/api/create/reservation", async (req, res) => {
 
     console.log(`Parsed Party Size: ${partySize}`);
     console.log(`Requester Email: ${email}`);
-    console.log(`Provided Party Member Emails (from request):`, partyMemberEmails);
 
     const reservationData = {
       name,
@@ -479,7 +477,7 @@ app.post("/api/create/reservation", async (req, res) => {
       seatTogether: reservationType === "PC" ? !!seatTogether : false,
       preferredGame: reservationType === "PC" ? (preferredGame === "ANY" ? null : preferredGame) : null,
       consoleType: reservationType === "CONSOLE" ? consoleType : null,
-      partyMembers: reservationType === "PC" && partyMemberEmails ? [email, ...partyMemberEmails] : [email],
+      partyMembers: [email],
     };
     
     if (reservationType === "PC") {
@@ -491,62 +489,13 @@ app.post("/api/create/reservation", async (req, res) => {
             reservationData.preferredGame = "Apex Legends";
         }
 
-        console.log("--- Starting PC Party Member Validation --- ");
-        if (partySize > 1) {
-          if (!partyMemberEmails || !Array.isArray(partyMemberEmails) || partyMemberEmails.length !== partySize - 1) {
-            console.error(`Validation Error: For party size ${partySize}, expected ${partySize - 1} member emails, got ${partyMemberEmails ? partyMemberEmails.length : 'undefined/null'}.`);
-            return res.status(400).json({
-              message: `For a party of ${partySize}, please provide ${partySize - 1} email(s) for your party members.`
-            });
-          }
-
-          const allPartyEmails = [email, ...partyMemberEmails]; 
-          console.log("All emails to validate (requester + members):", allPartyEmails);
-
-          for (const memberEmail of allPartyEmails) {
-            console.log(`Processing email for validation: '${memberEmail}' (Type: ${typeof memberEmail})`);
-            if (typeof memberEmail !== 'string' || !memberEmail.trim()){
-                console.error(`Validation Error: Invalid email format or empty string for: '${memberEmail}'`);
-                return res.status(400).json({ message: `Invalid email format provided: ${memberEmail}` });
-            }
-            
-            const emailToQuery = memberEmail.toLowerCase().trim(); // Ensure trim here as well
-            console.log(`Querying 'users' collection for email: '${emailToQuery}'`);
-
-            const user = await db.collection("users").findOne({ email: emailToQuery });
-            
-            console.log(`DB query result for '${emailToQuery}':`, user ? JSON.stringify(user, null, 2) : null);
-
-            if (!user) {
-              console.error(`Validation Error: User with email '${emailToQuery}' not found in 'users' collection.`);
-              return res.status(400).json({
-                message: `User with email ${memberEmail} is not registered. All party members must be registered UCLA students.`
-              });
-            }
-            
-            const emailDomainPart = emailToQuery.split('@')[1];
-            console.log(`Validating domain for '${emailToQuery}'. Domain part: '${emailDomainPart}'`);
-            if (emailDomainPart !== "g.ucla.edu" && emailDomainPart !== "ucla.edu") {
-              console.error(`Validation Error: Email '${emailToQuery}' does not have a UCLA domain.`);
-              return res.status(400).json({
-                message: `User with email ${memberEmail} is not a UCLA student. All party members must have a UCLA email address.`
-              });
-            }
-            console.log(`Email '${emailToQuery}' passed all validations.`);
-          }
-          reservationData.partyMembers = allPartyEmails; 
-          console.log("--- PC Party Member Validation Successful ---");
-        } else {
-          reservationData.partyMembers = [email];
-          console.log("Party size is 1, no additional member validation needed.");
-        }
+        console.log("PC Reservation. Party member email validation removed.");
 
     } else if (reservationType === "CONSOLE") {
         if (!consoleType) {
             console.error("Validation Error: consoleType is required for CONSOLE reservations.");
             return res.status(400).json({ message: "consoleType is required for CONSOLE reservations" });
         }
-        reservationData.partyMembers = [email]; 
         console.log("Console reservation, party members set to requester only.");
     } else {
       console.error(`Validation Error: Invalid reservationType: ${reservationType}.`);

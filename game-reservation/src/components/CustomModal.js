@@ -21,7 +21,7 @@ export default function CustomModal({
   isOpen,
   onOpenChange,
   onReservationCreated,
-  renderInput = false,
+  // renderInput prop seems unused, can be reviewed for removal
 }) {
   const { currentUser } = useAuth();
   
@@ -52,31 +52,13 @@ export default function CustomModal({
   const [partySize, setPartySize] = useState(1);
   const [seatTogether, setSeatTogether] = useState(false);
   const [preferredGame, setPreferredGame] = useState("ANY");
-  const [partyMemberEmailsInput, setPartyMemberEmailsInput] = useState([]);
 
   useEffect(() => {
     setSelectedConsoleType(null);
     setPartySize(1);
     setSeatTogether(false);
     setPreferredGame("ANY");
-    setPartyMemberEmailsInput([]);
   }, [selectedReservationType]);
-
-  useEffect(() => {
-    if (selectedReservationType === "PC") {
-      if (partySize > 1) {
-        setPartyMemberEmailsInput(Array(partySize - 1).fill(""));
-      } else {
-        setPartyMemberEmailsInput([]);
-      }
-    }
-  }, [partySize, selectedReservationType]);
-
-  const handlePartyMemberEmailChange = (index, value) => {
-    const updatedEmails = [...partyMemberEmailsInput];
-    updatedEmails[index] = value;
-    setPartyMemberEmailsInput(updatedEmails);
-  };
 
   const sendRequest = async (data) => {
     try {
@@ -116,13 +98,6 @@ export default function CustomModal({
     if (selectedReservationType === "PC") {
       reservationData.seatTogether = seatTogether;
       reservationData.preferredGame = preferredGame;
-      if (partySize > 1) {
-        reservationData.partyMemberEmails = partyMemberEmailsInput.filter(email => email.trim() !== "");
-        if (reservationData.partyMemberEmails.length !== partySize - 1) {
-          alert(`Please enter all ${partySize - 1} party member emails.`);
-          return;
-        }
-      }
     } else if (selectedReservationType === "CONSOLE") {
       reservationData.consoleType = selectedConsoleType;
     }
@@ -142,11 +117,6 @@ export default function CustomModal({
     if (selectedReservationType === "CONSOLE" && !selectedConsoleType) return true;
     if (selectedReservationType === "PC") {
       if (!partySize) return true;
-      if (partySize > 1) {
-        if (partyMemberEmailsInput.length !== partySize - 1 || partyMemberEmailsInput.some(email => !email.trim() || !email.includes('@'))) {
-          return true;
-        }
-      }
     }
     return false;
   };
@@ -216,25 +186,6 @@ export default function CustomModal({
                       ))}
                     </Select>
 
-                    {partySize > 1 && (
-                      <div className="mt-4 space-y-3">
-                        <p className="text-sm font-medium text-gray-700">Party Member Emails:</p>
-                        {partyMemberEmailsInput.map((email, index) => (
-                          <Input
-                            key={index}
-                            label={`Member ${index + 2} Email`}
-                            placeholder={`Enter email for party member ${index + 2}`}
-                            type="email"
-                            value={email}
-                            onValueChange={(value) => handlePartyMemberEmailChange(index, value)}
-                            fullWidth
-                            clearable
-                            isRequired
-                          />
-                        ))}
-                      </div>
-                    )}
-
                     <Select
                       label="Preferred Game (PC)"
                       placeholder="Select preferred game"
@@ -271,7 +222,6 @@ export default function CustomModal({
                   color="success"
                   onPress={handleSubmit}
                   isDisabled={isSubmitDisabled()}
-                  isLoading={false}
                 >
                   Create Reservation
                 </Button>
