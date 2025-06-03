@@ -4,7 +4,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './index.css';
 import App from './App';
 import Login from './components/Login';
-import Admin from './Admin';
 import Friends from './pages/Friends';
 
 import PrivateRoute from './components/PrivateRoute';
@@ -20,14 +19,7 @@ root.render(
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route
-            path="/admin"
-            element={
-              <PrivateRoute>
-                <Admin />
-              </PrivateRoute>
-            }
-          />
+
           <Route
             path="/friends"
             element={

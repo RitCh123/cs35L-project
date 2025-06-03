@@ -64,6 +64,20 @@ function AppContent() {
 
   const handleDeleteReservation = async (reservationId) => {
     if (!currentUser) return;
+
+    // Find the reservation to check ownership
+    const reservation = reservations.find(r => r._id === reservationId);
+    if (!reservation) {
+      alert("Reservation not found.");
+      return;
+    }
+
+    // Check if user has permission to delete (admin or owner)
+    if (userRole !== 'ADMIN' && currentUser.email !== reservation.email) {
+      alert("You don't have permission to delete this reservation.");
+      return;
+    }
+
     try {
       await axios.delete("http://localhost:8080/api/delete/reservation", {
         data: {
@@ -82,6 +96,13 @@ function AppContent() {
 
   const handleCompleteReservation = async (reservationId) => {
     if (!currentUser) return;
+    
+    // Only admins can complete reservations
+    if (userRole !== 'ADMIN') {
+      alert("Only administrators can complete reservations.");
+      return;
+    }
+
     try {
       await axios.put(`http://localhost:8080/api/reservations/complete/${reservationId}`, {
         userEmail: currentUser.email,

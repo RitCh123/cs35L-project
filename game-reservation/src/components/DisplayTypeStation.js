@@ -64,19 +64,21 @@ const DisplayTypeStation = ({
                         <p style={{ fontWeight: '600' }}>{item.name}</p>
                         {(userRole === 'ADMIN' || (currentUser && currentUser.email === item.email)) && (
                           <div style={{ display: 'flex', gap: '0.75rem' }}>
-                            <Button 
-                              size="md" 
-                              color="success" 
-                              variant="ghost" 
-                              onPress={() => onComplete(item._id)}
-                              style={{
-                                padding: '0.75rem 1.5rem',
-                                fontSize: '0.875rem',
-                                fontWeight: '500'
-                              }}
-                            >
-                              Complete
-                            </Button>
+                            {userRole === 'ADMIN' && (
+                              <Button 
+                                size="md" 
+                                color="success" 
+                                variant="ghost" 
+                                onPress={() => onComplete(item._id)}
+                                style={{
+                                  padding: '0.75rem 1.5rem',
+                                  fontSize: '0.875rem',
+                                  fontWeight: '500'
+                                }}
+                              >
+                                Complete
+                              </Button>
+                            )}
                             <Button 
                               size="md" 
                               color="danger" 
