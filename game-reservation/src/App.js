@@ -32,6 +32,7 @@ import axios from "axios";
 import CustomModal from "./components/CustomModal";
 import FriendModal from "./components/FriendModal"; // Import remains
 import ProfileTable from "./components/ProfileTable"; // Import remains
+import DisplayTypeStation from "./components/DisplayTypeStation"; // New import
 
 function AppContent() {
   const listOfPC = [
@@ -162,118 +163,45 @@ function AppContent() {
         />
         {/* FriendModal and ProfileTable are imported but not directly used in JSX here. */}
 
-        <div className="w-full p-4 flex flex-row gap-6">
-          <div className="flex-1 bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-3 text-indigo-700">PC Stations</h2>
-            <div className="mb-4">
-                 <Chip color="success" size="md">Active PCs: {occupiedPcCount} / {listOfPC.length}</Chip>
-                 <Chip color="warning" size="md" className="ml-2">PC Waitlist: {waitlistedPcReservations.length}</Chip>
+        <div style={{ width: '100%', padding: '2rem' }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            gap: '2rem',
+            maxWidth: '1800px',
+            margin: '0 auto'
+          }}>
+            <div style={{ flex: 1, maxWidth: '48%' }}>
+              <DisplayTypeStation
+                title="PC Stations"
+                activeCount={occupiedPcCount}
+                maxCount={listOfPC.length}
+                waitlistCount={waitlistedPcReservations.length}
+                activeReservations={activePcReservations}
+                waitlistedReservations={waitlistedPcReservations}
+                userRole={userRole}
+                currentUser={currentUser}
+                onComplete={handleCompleteReservation}
+                onDelete={handleDeleteReservation}
+                stationType="PC"
+              />
             </div>
 
-            <h3 className="text-lg font-medium mb-2 text-gray-800">Active PC Sessions</h3>
-            {activePcReservations.length === 0 && <p className="text-gray-600">No active PC sessions.</p>}
-            {activePcReservations.map((item) => (
-              <Card key={item._id} className="mb-3 shadow-md">
-                <CardBody>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-semibold text-md">{item.name} ({item.email})</p>
-                      <p className="text-sm text-gray-600">Party Size: {item.partySize}</p>
-                      <p className="text-sm text-gray-600">Seat Together: {item.seatTogether ? "Yes" : "No"}</p>
-                      <p className="text-sm text-gray-600">Game: {item.preferredGame || "Any"}</p>
-                      <p className="text-sm text-gray-600">Assigned: {item.assignedPCs && item.assignedPCs.length > 0 ? item.assignedPCs.join(', ') : "Pending assignment"}</p>
-                      <p className="text-sm text-green-600 font-medium">Ends: {item.endTime ? new Date(item.endTime).toLocaleTimeString() : "N/A"}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                        {(userRole === 'ADMIN' || (currentUser && currentUser.email === item.email)) && (
-                            <Button size="sm" color="warning" variant="flat" onPress={() => handleCompleteReservation(item._id)}>Complete</Button>
-                        )}
-                        {(userRole === 'ADMIN' || (currentUser && currentUser.email === item.email)) && (
-                            <Button size="sm" color="danger" variant="ghost" onPress={() => handleDeleteReservation(item._id)}>Delete</Button>
-                        )}
-                    </div>
-                  </div>
-                </CardBody>
-              </Card>
-            ))}
-
-            <h3 className="text-lg font-medium mt-6 mb-2 text-gray-800">PC Waitlist</h3>
-            {waitlistedPcReservations.length === 0 && <p className="text-gray-600">PC waitlist is empty.</p>}
-            {waitlistedPcReservations.map((item, index) => (
-              <Card key={item._id} className="mb-3 shadow-md bg-gray-50">
-                <CardBody>
-                <div className="flex justify-between items-start">
-                    <div>
-                        <p className="font-semibold text-md">#{index + 1}: {item.name} ({item.email})</p>
-                        <p className="text-sm text-gray-600">Party Size: {item.partySize}</p>
-                        <p className="text-sm text-gray-600">Seat Together: {item.seatTogether ? "Yes" : "No"}</p>
-                        <p className="text-sm text-gray-600">Game: {item.preferredGame || "Any"}</p>
-                        <p className="text-sm text-gray-600">Status: <Chip size="sm" color="default">{item.status}</Chip></p>
-                        <p className="text-xs text-gray-500">Queued at: {new Date(item.createdAt).toLocaleTimeString()}</p>
-                        {item.notes && <p className="text-xs text-orange-500">Notes: {item.notes}</p>}
-                    </div>
-                     {(userRole === 'ADMIN' || (currentUser && currentUser.email === item.email)) && (
-                        <Button size="sm" color="danger" variant="ghost" onPress={() => handleDeleteReservation(item._id)}>Cancel</Button>
-                     )}
-                  </div>
-                </CardBody>
-              </Card>
-            ))}
-          </div>
-
-          <div className="flex-1 bg-white p-6 rounded-lg shadow-lg">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-xl font-semibold text-indigo-700">Console Gaming</h2>
+            <div style={{ flex: 1, maxWidth: '48%' }}>
+              <DisplayTypeStation
+                title="Console Gaming"
+                activeCount={activeConsoleSessions.length}
+                maxCount={2}
+                waitlistCount={waitlistedConsoleSessions.length}
+                activeReservations={activeConsoleSessions}
+                waitlistedReservations={waitlistedConsoleSessions}
+                userRole={userRole}
+                currentUser={currentUser}
+                onComplete={handleCompleteReservation}
+                onDelete={handleDeleteReservation}
+                stationType="Console"
+              />
             </div>
-            <div className="mb-4">
-                 <Chip color="success" size="md">Active Consoles: {activeConsoleSessions.length} / 2</Chip>
-                 <Chip color="warning" size="md" className="ml-2">Console Waitlist: {waitlistedConsoleSessions.length}</Chip>
-            </div>
-
-            <h3 className="text-lg font-medium mb-2 text-gray-800">Active Console Sessions</h3>
-            {activeConsoleSessions.length === 0 && <p className="text-gray-600">No active console sessions.</p>}
-            {activeConsoleSessions.map((item) => (
-              <Card key={item._id} className="mb-3 shadow-md">
-                <CardBody>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-semibold text-md">{item.name} ({item.email})</p>
-                      <p className="text-sm text-gray-600">Console: {item.consoleType}</p>
-                      <p className="text-sm text-green-600 font-medium">Ends: {item.endTime ? new Date(item.endTime).toLocaleTimeString() : "N/A"}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                        {(userRole === 'ADMIN' || (currentUser && currentUser.email === item.email)) && (
-                            <Button size="sm" color="warning" variant="flat" onPress={() => handleCompleteReservation(item._id)}>Complete</Button>
-                        )}
-                        {(userRole === 'ADMIN' || (currentUser && currentUser.email === item.email)) && (
-                            <Button size="sm" color="danger" variant="ghost" onPress={() => handleDeleteReservation(item._id)}>Delete</Button>
-                        )}
-                    </div>
-                  </div>
-                </CardBody>
-              </Card>
-            ))}
-
-            <h3 className="text-lg font-medium mt-6 mb-2 text-gray-800">Console Waitlist</h3>
-            {waitlistedConsoleSessions.length === 0 && <p className="text-gray-600">Console waitlist is empty.</p>}
-            {waitlistedConsoleSessions.map((item, index) => (
-              <Card key={item._id} className="mb-3 shadow-md bg-gray-50">
-                <CardBody>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-semibold text-md">#{index + 1}: {item.name} ({item.email})</p>
-                      <p className="text-sm text-gray-600">Console: {item.consoleType}</p>
-                      <p className="text-sm text-gray-600">Status: <Chip size="sm" color="default">{item.status}</Chip></p>
-                      <p className="text-xs text-gray-500">Queued at: {new Date(item.createdAt).toLocaleTimeString()}</p>
-                      {item.notes && <p className="text-xs text-orange-500">Notes: {item.notes}</p>}
-                    </div>
-                    {(userRole === 'ADMIN' || (currentUser && currentUser.email === item.email)) && (
-                      <Button size="sm" color="danger" variant="ghost" onPress={() => handleDeleteReservation(item._id)}>Cancel</Button>
-                    )}
-                  </div>
-                </CardBody>
-              </Card>
-            ))}
           </div>
         </div>
       </HeroUIProvider>

@@ -151,11 +151,18 @@ export default function Admin() {
   return (
     <>
       <HeroUIProvider>
-        <nav className="w-full flex items-center justify-between p-4 bg-white">
-          <div className="text-xl font-bold">
+        <nav style={{ 
+          width: '100%', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          padding: '1rem',
+          backgroundColor: 'white'
+        }}>
+          <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
             <strong>Game Reservation</strong>
           </div>
-          <div className="flex gap-2">
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
             {currentUser ? (
               <>
                 <span className="text-gray-600">
@@ -206,57 +213,438 @@ export default function Admin() {
             )}
           </div>
         </nav>
-        <div style={{ display: "flex", justifyContent: "space-around" }}>
-          <div className="App" style={{ padding: "20px", width: "50%" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-start",
-                alignItems: "center",
-                flexDirection: "row",
-                gap: "10px",
-              }}
-            >
-              <Chip color="primary" size="lg">
-                Average Time: 8 minutes
-              </Chip>
-              <Chip color="secondary" size="lg">
-                Consoles Available: {2 - (data.filter(item => item.mode === "CONSOLE" && (item.currentConsole === "Console 1" || item.currentConsole === "Console 2")).length)}
-              </Chip>
+        <div style={{ width: '100%', padding: '2rem' }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            gap: '2rem',
+            maxWidth: '1800px',
+            margin: '0 auto'
+          }}>
+            <div style={{ flex: 1, maxWidth: '48%' }}>
+              <Card style={{ padding: '1rem' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'flex-start', 
+                  alignItems: 'center', 
+                  gap: '1rem',
+                  marginBottom: '1rem'
+                }}>
+                  <Chip color="primary" size="lg">
+                    Average Time: 8 minutes
+                  </Chip>
+                  <Chip color="secondary" size="lg">
+                    Consoles Available: {2 - (data.filter(item => item.mode === "CONSOLE" && (item.currentConsole === "Console 1" || item.currentConsole === "Console 2")).length)}
+                  </Chip>
+                </div>
+                <Table aria-label="Table with row dividers" style={{ width: '100%' }}>
+                  <TableHeader>
+                    <TableColumn>
+                      <span
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                        }}
+                      >
+                        QUEUE (CONSOLE)
+                      </span>
+                    </TableColumn>
+                  </TableHeader>
+                  <TableBody>
+                    { data
+                      .filter((item) => item.mode === "CONSOLE")
+                      .filter(
+                        (item) =>
+                          item.currentConsole === "Console 1"
+                      ).length > 0 ? data
+                      .filter((item) => item.mode === "CONSOLE")
+                      .filter(
+                        (item) =>
+                          item.currentConsole === "Console 1"
+                      )
+                      .map((item, index) => (
+                        <React.Fragment key={index}>
+                          <TableRow>
+                            <TableCell>
+                              <h2 className="text-bold">
+                                <strong>Console 1</strong>
+                              </h2>
+                              <Spacer y={2} />
+                              <Card>
+                                <CardBody>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      gap: "1rem",
+                                      flexDirection: "row",
+                                      justifyContent: "space-between",
+                                      alignItems: "center",
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                      }}
+                                    >
+                                      <p
+                                        className="text-lg"
+                                        style={{
+                                          display: "flex",
+                                          justifyContent: "space-between",
+                                          alignItems: "center",
+                                        }}
+                                      >
+                                        {item.name}
+                                      </p>
+                                      {item.mode === "CONSOLE" ? (
+                                        <p className="text-sm text-gray-500">
+                                          Console: {item.consoleType || "Unknown"}
+                                        </p>
+                                      ) : (
+                                        <p className="text-sm text-gray-500">PC</p>
+                                      )}
+                                    </div>
+                                    <Button
+                                      color="danger"
+                                      title="Delete"
+                                      onClick={() =>
+                                        handleDeleteReservation(item._id)
+                                      }
+                                    >
+                                      {" "}
+                                      Remove
+                                    </Button>
+                                  </div>
+                                </CardBody>
+                              </Card>
+                            </TableCell>
+                          </TableRow>
+                        </React.Fragment>
+                      )): (
+                        <React.Fragment>
+                          <TableRow>
+                            <TableCell>
+                              <h2 className="text-bold">
+                                <strong>Console 1</strong>
+                              </h2>
+                              <Spacer y={2} />
+                              <Card>
+                                <CardBody>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      gap: "1rem",
+                                      flexDirection: "row",
+                                      justifyContent: "space-between",
+                                      alignItems: "center",
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                      }}
+                                    >
+                                      <p
+                                        className="text-lg"
+                                        style={{
+                                          display: "flex",
+                                          justifyContent: "space-between",
+                                          alignItems: "center",
+                                          color: "red",
+                                        }}
+                                      >
+                                        No Reservations for Console 1
+                                      </p>
+                                    </div>
+                                  </div>
+                                </CardBody>
+                              </Card>
+                            </TableCell>
+                          </TableRow>
+                        </React.Fragment>
+                      )}
+                    { data
+                      .filter((item) => item.mode === "CONSOLE")
+                      .filter(
+                        (item) =>
+                          item.currentConsole === "Console 2"
+                      ).length > 0 ? data
+                      .filter((item) => item.mode === "CONSOLE")
+                      .filter(
+                        (item) =>
+                          item.currentConsole === "Console 2"
+                      )
+                      .map((item, index) => (
+                        <React.Fragment key={index}>
+                          <TableRow>
+                            <TableCell>
+                              <h2 className="text-bold">
+                                <strong>Console 2</strong>
+                              </h2>
+                              <Spacer y={2} />
+                              <Card>
+                                <CardBody>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      gap: "1rem",
+                                      flexDirection: "row",
+                                      justifyContent: "space-between",
+                                      alignItems: "center",
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                      }}
+                                    >
+                                      <p
+                                        className="text-lg"
+                                        style={{
+                                          display: "flex",
+                                          justifyContent: "space-between",
+                                          alignItems: "center",
+                                        }}
+                                      >
+                                        {item.name}
+                                      </p>
+                                      {item.mode === "CONSOLE" ? (
+                                        <p className="text-sm text-gray-500">
+                                          Console: {item.consoleType || "Unknown"}
+                                        </p>
+                                      ) : (
+                                        <p className="text-sm text-gray-500">PC</p>
+                                      )}
+                                    </div>
+                                    <Button
+                                      color="danger"
+                                      title="Delete"
+                                      onClick={() =>
+                                        handleDeleteReservation(item._id)
+                                      }
+                                    >
+                                      {" "}
+                                      Remove
+                                    </Button>
+                                  </div>
+                                </CardBody>
+                              </Card>
+                            </TableCell>
+                          </TableRow>
+                        </React.Fragment>
+                      )): (
+                        <React.Fragment>
+                          <TableRow>
+                            <TableCell>
+                              <h2 className="text-bold">
+                                <strong>Console 2</strong>
+                              </h2>
+                              <Spacer y={2} />
+                              <Card>
+                                <CardBody>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      gap: "1rem",
+                                      flexDirection: "row",
+                                      justifyContent: "space-between",
+                                      alignItems: "center",
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                      }}
+                                    >
+                                      <p
+                                        className="text-lg"
+                                        style={{
+                                          display: "flex",
+                                          justifyContent: "space-between",
+                                          alignItems: "center",
+                                          color: "red",
+                                        }}
+                                      >
+                                        No Reservations for Console 2
+                                      </p>
+                                    </div>
+                                  </div>
+                                </CardBody>
+                              </Card>
+                            </TableCell>
+                          </TableRow>
+                        </React.Fragment>
+                      )}
+                      <TableRow>
+                        <TableCell colSpan={1} className="h-auto py-0">
+                          <Divider className="my-0" />
+                        </TableCell>
+                      </TableRow>
+                      
+                    { data
+                      .filter((item) => item.mode === "CONSOLE")
+                      .filter(
+                        (item) =>
+                          item.currentConsole === null
+                      )
+                      .map((item, index) => (
+                        <React.Fragment key={index}>
+                          <TableRow>
+                            <TableCell>
+                              <h2 className="text-bold">
+                                <strong>Priority #{index + 1}</strong>
+                              </h2>
+                              <Spacer y={2} />
+                              <Card>
+                                <CardBody>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      gap: "1rem",
+                                      flexDirection: "row",
+                                      justifyContent: "space-between",
+                                      alignItems: "center",
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                      }}
+                                    >
+                                      <p
+                                        className="text-lg"
+                                        style={{
+                                          display: "flex",
+                                          justifyContent: "space-between",
+                                          alignItems: "center",
+                                        }}
+                                      >
+                                        {item.name}
+                                      </p>
+                                      {item.mode === "CONSOLE" ? (
+                                        <p className="text-sm text-gray-500">
+                                          Console: {item.consoleType || "Unknown"}
+                                        </p>
+                                      ) : (
+                                        <p className="text-sm text-gray-500">PC</p>
+                                      )}
+                                    </div>
+                                    <ActionDropdown 
+                                      isConsole={true} 
+                                      removeOnClick={() =>
+                                        handleDeleteReservation(item._id)
+                                      }
+                                      onClickConsoleOne={
+                                        async () => {
+                                          try {
+                                            await axios.post(
+                                              "http://localhost:8080/api/move/console/reservation",
+                                              {
+                                                reservationId: item._id,
+                                                currentConsole: "Console 1",
+                                              }
+                                            )
+                                          } catch (error) {
+                                            console.error("Error moving reservation:", error);
+                                          }
+                                        }
+                                      }
+                                      onClickConsoleTwo={
+                                        async () => {
+                                          try {
+                                            await axios.post(
+                                              "http://localhost:8080/api/move/reservation",
+                                              {
+                                                reservationId: item._id,
+                                                currentConsole: "Console 2",
+                                              }
+                                            )
+                                          } catch (error) {
+                                            console.error("Error moving reservation:", error);
+                                          }
+                                        }
+                                      }
+                                    />
+                                  </div>
+                                </CardBody>
+                              </Card>
+                              <Spacer y={2} />
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell colSpan={1} className="h-auto py-0">
+                              <Divider className="my-0" />
+                            </TableCell>
+                          </TableRow>
+                        </React.Fragment>
+                      ))}
+                  </TableBody>
+                </Table>
+              </Card>
             </div>
-            <Spacer y={2} />
-            <Table aria-label="Table with row dividers" className="max-w-md">
-              <TableHeader>
-                <TableColumn>
-                  <span
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                    }}
-                  >
-                    QUEUE (CONSOLE)
-                  </span>
-                </TableColumn>
-              </TableHeader>
-              <TableBody>
-                { data
-                  .filter((item) => item.mode === "CONSOLE")
-                  .filter(
-                    (item) =>
-                      item.currentConsole === "Console 1"
-                  ).length > 0 ? data
-                  .filter((item) => item.mode === "CONSOLE")
-                  .filter(
-                    (item) =>
-                      item.currentConsole === "Console 1"
-                  )
-                  .map((item, index) => (
-                    <React.Fragment key={index}>
+
+            <div style={{ flex: 1, maxWidth: '48%' }}>
+              <Card style={{ padding: '1rem' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'flex-start', 
+                  alignItems: 'center', 
+                  gap: '1rem',
+                  marginBottom: '1rem'
+                }}>
+                  <Chip color="primary" size="lg">
+                    Average Time: 8 minutes
+                  </Chip>
+                  <Chip color="secondary" size="lg">
+                    PCs Available: {14 - (data.filter(item => item.mode === "PC" && item.onCurrentPC === true).length)}
+                  </Chip>
+                </div>
+                <Table aria-label="Table with row dividers" style={{ width: '100%' }}>
+                  <TableHeader>
+                    <TableColumn>QUEUE (PC)</TableColumn>
+                    <TableColumn>
+                      <Select
+                        className="bg-gray-100 text-xs px-2 py-1 rounded"
+                        style={{
+                          background: "#f9fafb", // matches typical table header bg
+                          fontSize: "0.75rem",
+                          height: "1.5rem",
+                          minWidth: "80px",
+                          border: "none",
+                          boxShadow: "none",
+                        }}
+                        size="sm"
+                        aria-label="PC Filter"
+                        placeholder="All PCs"
+                        onChange={(e) => {
+                          setSelectedPC(e.target.value);
+                        }}
+                        value={selectedPC}
+                        defaultSelectedKeys={["A"]}
+                      >
+                        {listOfPC.map((pc) => (
+                          <SelectItem key={pc} value={pc}>
+                            {pc}
+                          </SelectItem>
+                        ))}
+                      </Select>
+                    </TableColumn>
+                  </TableHeader>
+                  <TableBody>
+                    {data
+                    .filter((item) => item.mode === "PC" && item.pcLetter === selectedPC && item.onCurrentPC === true).length > 0 ? data
+                    .filter((item) => item.mode === "PC" && item.pcLetter === selectedPC && item.onCurrentPC === true)
+                    .map((item, index) => (
                       <TableRow>
-                        <TableCell>
+                        <TableCell colSpan={2} className="h-auto py-0">
                           <h2 className="text-bold">
-                            <strong>Console 1</strong>
+                            <strong>PC {selectedPC}</strong>
                           </h2>
                           <Spacer y={2} />
                           <Card>
@@ -286,13 +674,6 @@ export default function Admin() {
                                   >
                                     {item.name}
                                   </p>
-                                  {item.mode === "CONSOLE" ? (
-                                    <p className="text-sm text-gray-500">
-                                      Console: {item.consoleType || "Unknown"}
-                                    </p>
-                                  ) : (
-                                    <p className="text-sm text-gray-500">PC</p>
-                                  )}
                                 </div>
                                 <Button
                                   color="danger"
@@ -308,14 +689,12 @@ export default function Admin() {
                             </CardBody>
                           </Card>
                         </TableCell>
-                      </TableRow>
-                    </React.Fragment>
-                  )): (
-                    <React.Fragment>
+                    </TableRow>
+                    )): (
                       <TableRow>
-                        <TableCell>
+                        <TableCell colSpan={2} className="h-auto py-0">
                           <h2 className="text-bold">
-                            <strong>Console 1</strong>
+                            <strong>PC {selectedPC}</strong>
                           </h2>
                           <Spacer y={2} />
                           <Card>
@@ -344,7 +723,7 @@ export default function Admin() {
                                       color: "red",
                                     }}
                                   >
-                                    No Reservations for Console 1
+                                    No Reservations for PC {selectedPC}
                                   </p>
                                 </div>
                               </div>
@@ -352,138 +731,19 @@ export default function Admin() {
                           </Card>
                         </TableCell>
                       </TableRow>
-                    </React.Fragment>
-                  )}
-                { data
-                  .filter((item) => item.mode === "CONSOLE")
-                  .filter(
-                    (item) =>
-                      item.currentConsole === "Console 2"
-                  ).length > 0 ? data
-                  .filter((item) => item.mode === "CONSOLE")
-                  .filter(
-                    (item) =>
-                      item.currentConsole === "Console 2"
-                  )
-                  .map((item, index) => (
-                    <React.Fragment key={index}>
+                    )}
+                    <TableRow>
+                      <TableCell colSpan={2} className="h-auto py-0">
+                        <Spacer y={2} />
+                        <Divider className="my-0" />
+                        <Spacer y={2} />
+                      </TableCell>
+                    </TableRow>
+                    {data
+                    .filter((item) => item.mode === "PC" && item.pcLetter === selectedPC && item.onCurrentPC === false)
+                    .map((item, index) => (
                       <TableRow>
-                        <TableCell>
-                          <h2 className="text-bold">
-                            <strong>Console 2</strong>
-                          </h2>
-                          <Spacer y={2} />
-                          <Card>
-                            <CardBody>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  gap: "1rem",
-                                  flexDirection: "row",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                  }}
-                                >
-                                  <p
-                                    className="text-lg"
-                                    style={{
-                                      display: "flex",
-                                      justifyContent: "space-between",
-                                      alignItems: "center",
-                                    }}
-                                  >
-                                    {item.name}
-                                  </p>
-                                  {item.mode === "CONSOLE" ? (
-                                    <p className="text-sm text-gray-500">
-                                      Console: {item.consoleType || "Unknown"}
-                                    </p>
-                                  ) : (
-                                    <p className="text-sm text-gray-500">PC</p>
-                                  )}
-                                </div>
-                                <Button
-                                  color="danger"
-                                  title="Delete"
-                                  onClick={() =>
-                                    handleDeleteReservation(item._id)
-                                  }
-                                >
-                                  {" "}
-                                  Remove
-                                </Button>
-                              </div>
-                            </CardBody>
-                          </Card>
-                        </TableCell>
-                      </TableRow>
-                    </React.Fragment>
-                  )): (
-                    <React.Fragment>
-                      <TableRow>
-                        <TableCell>
-                          <h2 className="text-bold">
-                            <strong>Console 2</strong>
-                          </h2>
-                          <Spacer y={2} />
-                          <Card>
-                            <CardBody>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  gap: "1rem",
-                                  flexDirection: "row",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                  }}
-                                >
-                                  <p
-                                    className="text-lg"
-                                    style={{
-                                      display: "flex",
-                                      justifyContent: "space-between",
-                                      alignItems: "center",
-                                      color: "red",
-                                    }}
-                                  >
-                                    No Reservations for Console 2
-                                  </p>
-                                </div>
-                              </div>
-                            </CardBody>
-                          </Card>
-                        </TableCell>
-                      </TableRow>
-                    </React.Fragment>
-                  )}
-                  <TableRow>
-                    <TableCell colSpan={1} className="h-auto py-0">
-                      <Divider className="my-0" />
-                    </TableCell>
-                  </TableRow>
-                  
-                { data
-                  .filter((item) => item.mode === "CONSOLE")
-                  .filter(
-                    (item) =>
-                      item.currentConsole === null
-                  )
-                  .map((item, index) => (
-                    <React.Fragment key={index}>
-                      <TableRow>
-                        <TableCell>
+                        <TableCell colSpan={2} className="h-auto py-0">
                           <h2 className="text-bold">
                             <strong>Priority #{index + 1}</strong>
                           </h2>
@@ -515,42 +775,21 @@ export default function Admin() {
                                   >
                                     {item.name}
                                   </p>
-                                  {item.mode === "CONSOLE" ? (
-                                    <p className="text-sm text-gray-500">
-                                      Console: {item.consoleType || "Unknown"}
-                                    </p>
-                                  ) : (
-                                    <p className="text-sm text-gray-500">PC</p>
-                                  )}
                                 </div>
                                 <ActionDropdown 
-                                  isConsole={true} 
+                                  isConsole={false} 
                                   removeOnClick={() =>
                                     handleDeleteReservation(item._id)
                                   }
-                                  onClickConsoleOne={
+                                  onClickPC={
                                     async () => {
                                       try {
                                         await axios.post(
-                                          "http://localhost:8080/api/move/console/reservation",
+                                          "http://localhost:8080/api/move/pc/reservation",
                                           {
                                             reservationId: item._id,
-                                            currentConsole: "Console 1",
-                                          }
-                                        )
-                                      } catch (error) {
-                                        console.error("Error moving reservation:", error);
-                                      }
-                                    }
-                                  }
-                                  onClickConsoleTwo={
-                                    async () => {
-                                      try {
-                                        await axios.post(
-                                          "http://localhost:8080/api/move/reservation",
-                                          {
-                                            reservationId: item._id,
-                                            currentConsole: "Console 2",
+                                            pcLetter: selectedPC,
+                                            onCurrentPC: true,
                                           }
                                         )
                                       } catch (error) {
@@ -562,239 +801,13 @@ export default function Admin() {
                               </div>
                             </CardBody>
                           </Card>
-                          <Spacer y={2} />
                         </TableCell>
                       </TableRow>
-                      <TableRow>
-                        <TableCell colSpan={1} className="h-auto py-0">
-                          <Divider className="my-0" />
-                        </TableCell>
-                      </TableRow>
-                    </React.Fragment>
-                  ))}
-                ;
-              </TableBody>
-            </Table>
-          </div>
-          <div className="App" style={{ padding: "20px", width: "50%" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-start",
-                alignItems: "center",
-                flexDirection: "row",
-                gap: "10px",
-              }}
-            >
-              <Chip color="primary" size="lg">
-                Average Time: 8 minutes
-              </Chip>
-              <Chip color="secondary" size="lg">
-                PCs Available: {14 - (data.filter(item => item.mode === "PC" && item.onCurrentPC === true).length)}
-              </Chip>
-            </div>
-            <Spacer y={2} />
-            <Table aria-label="Table with row dividers" className="max-w-md">
-              <TableHeader>
-                <TableColumn>QUEUE (PC)</TableColumn>
-                <TableColumn>
-                  <Select
-                    className="bg-gray-100 text-xs px-2 py-1 rounded"
-                    style={{
-                      background: "#f9fafb", // matches typical table header bg
-                      fontSize: "0.75rem",
-                      height: "1.5rem",
-                      minWidth: "80px",
-                      border: "none",
-                      boxShadow: "none",
-                    }}
-                    size="sm"
-                    aria-label="PC Filter"
-                    placeholder="All PCs"
-                    onChange={(e) => {
-                      setSelectedPC(e.target.value);
-                    }}
-                    value={selectedPC}
-                    defaultSelectedKeys={["A"]}
-                  >
-                    {listOfPC.map((pc) => (
-                      <SelectItem key={pc} value={pc}>
-                        {pc}
-                      </SelectItem>
                     ))}
-                  </Select>
-                </TableColumn>
-              </TableHeader>
-              <TableBody>
-                {data
-                .filter((item) => item.mode === "PC" && item.pcLetter === selectedPC && item.onCurrentPC === true).length > 0 ? data
-                .filter((item) => item.mode === "PC" && item.pcLetter === selectedPC && item.onCurrentPC === true)
-                .map((item, index) => (
-                  <TableRow>
-                    <TableCell colSpan={2} className="h-auto py-0">
-                      <h2 className="text-bold">
-                        <strong>PC {selectedPC}</strong>
-                      </h2>
-                      <Spacer y={2} />
-                      <Card>
-                        <CardBody>
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: "1rem",
-                              flexDirection: "row",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                              }}
-                            >
-                              <p
-                                className="text-lg"
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                }}
-                              >
-                                {item.name}
-                              </p>
-                            </div>
-                            <Button
-                              color="danger"
-                              title="Delete"
-                              onClick={() =>
-                                handleDeleteReservation(item._id)
-                              }
-                            >
-                              {" "}
-                              Remove
-                            </Button>
-                          </div>
-                        </CardBody>
-                      </Card>
-                    </TableCell>
-                </TableRow>
-                )): (
-                  <TableRow>
-                    <TableCell colSpan={2} className="h-auto py-0">
-                      <h2 className="text-bold">
-                        <strong>PC {selectedPC}</strong>
-                      </h2>
-                      <Spacer y={2} />
-                      <Card>
-                        <CardBody>
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: "1rem",
-                              flexDirection: "row",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                              }}
-                            >
-                              <p
-                                className="text-lg"
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                  color: "red",
-                                }}
-                              >
-                                No Reservations for PC {selectedPC}
-                              </p>
-                            </div>
-                          </div>
-                        </CardBody>
-                      </Card>
-                    </TableCell>
-                  </TableRow>
-                )}
-                <TableRow>
-                  <TableCell colSpan={2} className="h-auto py-0">
-                    <Spacer y={2} />
-                    <Divider className="my-0" />
-                    <Spacer y={2} />
-                  </TableCell>
-                </TableRow>
-                {data
-                .filter((item) => item.mode === "PC" && item.pcLetter === selectedPC && item.onCurrentPC === false)
-                .map((item, index) => (
-                  <TableRow>
-                    <TableCell colSpan={2} className="h-auto py-0">
-                      <h2 className="text-bold">
-                        <strong>Priority #{index + 1}</strong>
-                      </h2>
-                      <Spacer y={2} />
-                      <Card>
-                        <CardBody>
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: "1rem",
-                              flexDirection: "row",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                              }}
-                            >
-                              <p
-                                className="text-lg"
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                }}
-                              >
-                                {item.name}
-                              </p>
-                            </div>
-                            <ActionDropdown 
-                              isConsole={false} 
-                              removeOnClick={() =>
-                                handleDeleteReservation(item._id)
-                              }
-                              onClickPC={
-                                async () => {
-                                  try {
-                                    await axios.post(
-                                      "http://localhost:8080/api/move/pc/reservation",
-                                      {
-                                        reservationId: item._id,
-                                        pcLetter: selectedPC,
-                                        onCurrentPC: true,
-                                      }
-                                    )
-                                  } catch (error) {
-                                    console.error("Error moving reservation:", error);
-                                  }
-                                }
-                              }
-                            />
-                          </div>
-                        </CardBody>
-                      </Card>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                  </TableBody>
+                </Table>
+              </Card>
+            </div>
           </div>
         </div>
         <Button
