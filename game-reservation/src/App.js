@@ -43,6 +43,8 @@ import {
 } from "@heroui/table";
 
 import CustomModal from "./components/CustomModal";
+import FriendModal from "./components/FriendModal";
+import ProfileTable from "./components/ProfileTable";
 
 function AppContent() {
 
@@ -70,10 +72,24 @@ function AppContent() {
 
   const navigate = useNavigate();
   const { currentUser, logout, userRole } = useAuth();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+
   const [reservations, setReservations] = useState([]);
   const [selectedConsoleFilter, setSelectedConsoleFilter] = useState("All");
   const consoleFilterOptions = ["All", "SWITCH", "XBOX", "PS5"];
+  const [showProfiles, setShowProfiles] = useState(false);
+  const [profiles, setProfiles] = useState([]);
+
+  const {
+    isOpen: isReservationOpen,
+    onOpen: onOpenReservation,
+    onOpenChange: onReservationOpenChange,
+  } = useDisclosure();
+  
+  const {
+    isOpen: isProfileOpen,
+    onOpen: onOpenProfile,
+    onOpenChange: onProfileOpenChange,
+  } = useDisclosure();
 
   const fetchReservations = useCallback(() => {
     axios.get("http://localhost:8080/api/view/reservations")
@@ -85,7 +101,16 @@ function AppContent() {
         console.error("Error fetching reservations:", error);
         alert("Could not fetch reservations. Please try again later.");
       });
-  }, []);
+  };
+
+  const fetchProfiles = async () => {
+    try {
+      const res = await axios.get("http://localhost:8080/api/view/profiles");
+      setProfiles(res.data);
+    } catch (err) {
+      console.error("Error fetching profiles:", err);
+    }
+  };
 
   useEffect(() => {
     fetchReservations();
@@ -162,8 +187,12 @@ function AppContent() {
                     ? 'Welcome, Admin!'
                     : `Welcome, ${getFirstName(currentUser.displayName)}!`}
                 </span>
-                <Button onPress={onOpen} color="primary" variant="solid">
-                  New Reservation
+                <Button
+                  as={Link}
+                  href="/friends"
+                  variant="ghost"
+                >
+                  Friends
                 </Button>
                 <Button
                   color="danger"
@@ -175,12 +204,30 @@ function AppContent() {
               </>
             ) : (
               <>
-                <Button as={Link} href="/signup" color="secondary" variant="solid">
+            <Button
+              style={{
+                backgroundImage:
+                      "linear-gradient(to top right, #ec4899, #facc15)",
+                color: "white",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              }}
+              as={Link}
+                  href="/signup"
+            >
                   Sign Up
-                </Button>
-                <Button as={Link} href="/login" color="primary" variant="solid">
-                  Log In
-                </Button>
+            </Button>
+            <Button
+              style={{
+                backgroundImage:
+                      "linear-gradient(to top right, #ef4444, #f97316)",
+                color: "white",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              }}
+              as={Link}
+              href="/login"
+            >
+              Log In
+            </Button>
               </>
             )}
           </div>
@@ -321,6 +368,72 @@ function AppContent() {
             ))}
           </div>
         </div>
+        
+
+        <Button
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            borderRadius: "50%",
+            width: "50px",
+            height: "50px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            fontSize: "24px",
+            backgroundColor: "#ff5e5e",
+          }}
+          isIconOnly
+          onPress={onOpenReservation}
+        >
+          <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
+            <path
+              d="M10 4v12M4 10h12"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        </Button>
+        <Button
+          style={{
+            position: "fixed",
+            bottom: "90px",
+            right: "20px",
+            borderRadius: "50%",
+            width: "50px",
+            height: "50px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            fontSize: "24px",
+            backgroundColor: "#22c55e", // green
+            zIndex: 1000,
+          }}
+          isIconOnly
+          color="success"
+          onPress={onOpenProfile}
+        >
+          <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
+            <path
+              d="M10 4v12M4 10h12"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        </Button>
+        <CustomModal
+          isOpen={isReservationOpen}
+          placement="top-center"
+          onOpenChange={onReservationOpenChange}
+          onReservationCreated={fetchReservations}
+        />
+        <FriendModal
+          isOpen={isProfileOpen}
+          onOpenChange={onProfileOpenChange}
+        />
       </HeroUIProvider>
     </>
   );
