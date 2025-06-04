@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useAuth } from "./firebase/AuthContext";
 import { useNavigate, Link as RouterLink }  from "react-router-dom";
+import {addToast, ToastProvider} from "@heroui/toast";
+
 
 // Reverted HeroUI component imports to mostly use @heroui/react
 import {
@@ -21,10 +23,12 @@ import {
   Navbar,
   NavbarBrand,
   NavbarContent,
-  NavbarItem
+  NavbarItem,
+  Button,
+  Alert
 } from "@heroui/react";
 
-import { Button, ButtonGroup } from "@heroui/button"; // This was already individual
+import { ButtonGroup } from "@heroui/button"; // This was already individual
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from "@heroui/table"; // This was already individual
 
 import axios from "axios";
@@ -45,6 +49,8 @@ function AppContent() {
   const { currentUser, logout, userRole } = useAuth();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [reservations, setReservations] = useState([]);
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
 
   const fetchReservations = useCallback(() => {
     axios.get("http://localhost:8080/api/view/reservations")
@@ -62,19 +68,29 @@ function AppContent() {
     fetchReservations();
   }, [fetchReservations]);
 
+  useEffect(() => {
+    let alertTimeout;
+    if (alertVisible) {
+      alertTimeout = setTimeout(() => {
+        setAlertVisible(false);
+      }, 1500);
+    }
+    return () => clearTimeout(alertTimeout);
+  }, [alertVisible]);
+
   const handleDeleteReservation = async (reservationId) => {
     if (!currentUser) return;
 
-    // Find the reservation to check ownership
     const reservation = reservations.find(r => r._id === reservationId);
     if (!reservation) {
-      alert("Reservation not found.");
+      setAlertMessage("Reservation not found.");
+      setAlertVisible(true);
       return;
     }
 
-    // Regular users can only delete their own reservations
     if (userRole !== 'ADMIN' && currentUser.email !== reservation.email) {
-      alert("You can only delete your own reservations.");
+      setAlertMessage("You can only delete your own reservations.");
+      setAlertVisible(true);
       return;
     }
 
@@ -87,19 +103,21 @@ function AppContent() {
         },
       });
       fetchReservations();
-      alert("Reservation deleted successfully.");
+      setAlertMessage("Reservation Deleted Successfully.");
+      setAlertVisible(true);
     } catch (err) {
       console.error("Error deleting reservation:", err.response ? err.response.data : err.message);
-      alert("Failed to delete reservation: " + (err.response && err.response.data && err.response.data.message ? err.response.data.message : "Server error"));
+      setAlertMessage("Failed to delete reservation: " + (err.response && err.response.data && err.response.data.message ? err.response.data.message : "Server error"));
+      setAlertVisible(true);
     }
   };
 
   const handleCompleteReservation = async (reservationId) => {
     if (!currentUser) return;
     
-    // Only admins can complete reservations
     if (userRole !== 'ADMIN') {
-      alert("Only administrators can complete reservations.");
+      setAlertMessage("Only administrators can complete reservations.");
+      setAlertVisible(true);
       return;
     }
 
@@ -109,10 +127,12 @@ function AppContent() {
         userRole: userRole,
       });
       fetchReservations();
-      alert("Reservation marked as completed.");
+      setAlertMessage("Reservation marked as completed.");
+      setAlertVisible(true);
     } catch (err) {
       console.error("Error completing reservation:", err.response ? err.response.data : err.message);
-      alert("Failed to complete reservation: " + (err.response && err.response.data && err.response.data.message ? err.response.data.message : "Server error"));
+      setAlertMessage("Failed to complete reservation: " + (err.response && err.response.data && err.response.data.message ? err.response.data.message : "Server error"));
+      setAlertVisible(true);
     }
   };
 
@@ -150,7 +170,6 @@ function AppContent() {
                 <Button as={RouterLink} to="/friends" color="secondary" variant="ghost">
                   Friends
                 </Button>
-                {/* Profile button removed */}
                 <Button
                   color="danger"
                   variant="ghost"
@@ -177,7 +196,6 @@ function AppContent() {
             onOpenChange={onOpenChange} 
             onReservationCreated={fetchReservations} 
         />
-        {/* FriendModal and ProfileTable are imported but not directly used in JSX here. */}
 
         <div style={{ width: '100%', padding: '2rem' }}>
           <div style={{ 
@@ -220,6 +238,12 @@ function AppContent() {
             </div>
           </div>
         </div>
+
+        {alertVisible && (
+          <Alert color="success" title="Success" onClose={() => setAlertVisible(false)}>
+            {alertMessage}
+          </Alert>
+        )}
       </HeroUIProvider>
     </>
   );
