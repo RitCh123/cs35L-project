@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../firebase/AuthContext';
-import { Button, Input, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Switch, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
+import { Button, Input, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Switch, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Card, CardBody, Avatar, Chip, Tooltip, Badge } from "@heroui/react";
 import { useDisclosure } from "@heroui/react";
 import axios from 'axios';
 import { Link } from 'react-router-dom';
@@ -229,81 +229,125 @@ export default function Friends() {
         </div>
       </div>
       
-      <div className="mb-4">
-        <Input
-          type="text"
-          placeholder="Search by name, email, game, mode, play style, etc."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          variant="bordered"
-          radius="lg"
-          size="lg"
-          fullWidth
-          startContent={
-            <svg
-              aria-hidden="true"
-              fill="none"
-              focusable="false"
-              height="1em"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              width="1em"
-              className="text-default-400"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-          }
-        />
-      </div>
+      <div style={{ marginTop: '3rem' }}>
+        <div className="mb-4" style={{ marginBottom: '2rem' }}>
+          <Input
+            type="text"
+            placeholder="Search by name, email, game, mode, play style, etc."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            variant="bordered"
+            radius="lg"
+            size="lg"
+            fullWidth
+            startContent={
+              <svg
+                aria-hidden="true"
+                fill="none"
+                focusable="false"
+                height="1em"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                width="1em"
+                className="text-default-400"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+            }
+          />
+        </div>
 
-      <Table aria-label="Friends list">
-        <TableHeader>
-          <TableColumn>Name</TableColumn>
-          <TableColumn>Email</TableColumn>
-          <TableColumn>Game</TableColumn>
-          <TableColumn>Mode</TableColumn>
-          <TableColumn>Time</TableColumn>
-          <TableColumn>Play Style</TableColumn>
-          <TableColumn>Action</TableColumn>
-        </TableHeader>
-        <TableBody>
-          {filteredProfiles.map((profile) => (
-            <TableRow key={profile._id}>
-              <TableCell>{profile.name}</TableCell>
-              <TableCell>{profile.email}</TableCell>
-              <TableCell>{profile.game || 'N/A'}</TableCell>
-              <TableCell>{profile.mode || 'N/A'}</TableCell>
-              <TableCell>{profile.time || 'N/A'}</TableCell>
-              <TableCell>{profile.playStyle || 'Casual'}</TableCell>
-              <TableCell>
-                {profile.email !== currentUser?.email && (
-                  sentEmails.has(profile._id) ? (
-                    <Button
-                      color="default"
-                      variant="flat"
-                      isDisabled
+        <div style={{ marginBottom: '2rem' }}>
+          <Table aria-label="Friends list">
+            <TableHeader>
+              <TableColumn>Player</TableColumn>
+              <TableColumn>Contact</TableColumn>
+              <TableColumn>Game Details</TableColumn>
+              <TableColumn>Availability</TableColumn>
+              <TableColumn>Action</TableColumn>
+            </TableHeader>
+            <TableBody>
+              {filteredProfiles.map((profile) => (
+                <TableRow key={profile._id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar
+                        name={profile.name}
+                        size="md"
+                        radius="full"
+                        color="primary"
+                      />
+                      <div>
+                        <p className="text-lg font-semibold">{profile.name}</p>
+                        <Chip
+                          size="sm"
+                          variant="flat"
+                          color={profile.playStyle === 'Competitive' ? 'danger' : 'success'}
+                        >
+                          {profile.playStyle || 'Casual'}
+                        </Chip>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip content="Send email">
+                      <div className="cursor-pointer">
+                        <p className="text-sm text-default-500">{profile.email}</p>
+                      </div>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-2">
+                      <Badge color="primary" variant="flat" size="sm">
+                        {profile.game || 'N/A'}
+                      </Badge>
+                      <Badge color="secondary" variant="flat" size="sm">
+                        {profile.mode || 'N/A'}
+                      </Badge>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      size="sm"
+                      variant="dot"
+                      color={profile.time ? 'success' : 'default'}
                     >
-                      Request Sent
-                    </Button>
-                  ) : (
-                    <Button
-                      color="primary"
-                      variant="solid"
-                      onPress={() => openMessageModal(profile._id)}
-                    >
-                      Friend
-                    </Button>
-                  )
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                      {profile.time || 'Not specified'}
+                    </Chip>
+                  </TableCell>
+                  <TableCell>
+                    {profile.email !== currentUser?.email && (
+                      sentEmails.has(profile._id) ? (
+                        <Button
+                          color="default"
+                          variant="flat"
+                          isDisabled
+                          startContent={<CheckIcon />}
+                        >
+                          Request Sent
+                        </Button>
+                      ) : (
+                        <Button
+                          color="primary"
+                          variant="solid"
+                          onPress={() => openMessageModal(profile._id)}
+                          startContent={<AddFriendIcon />}
+                        >
+                          Friend
+                        </Button>
+                      )
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
 
       <Modal 
         isOpen={isMessageModalOpen} 
@@ -348,4 +392,18 @@ export default function Friends() {
       />
     </div>
   );
-} 
+}
+
+const CheckIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const AddFriendIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M16 21V19C16 17.9391 15.5786 16.9217 14.8284 16.1716C14.0783 15.4214 13.0609 15 12 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M8.5 11C10.7091 11 12.5 9.20914 12.5 7C12.5 4.79086 10.7091 3 8.5 3C6.29086 3 4.5 4.79086 4.5 7C4.5 9.20914 6.29086 11 8.5 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M20 8V14M17 11H23" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+); 
