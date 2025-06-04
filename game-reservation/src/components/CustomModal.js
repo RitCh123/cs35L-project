@@ -62,6 +62,11 @@ export default function CustomModal({
 
   const sendRequest = async (data) => {
     try {
+      if (data.email !== currentUser.email || data.name !== currentUser.displayName) {
+        alert("You can only create reservations for yourself.");
+        return null;
+      }
+
       const response = await axios.post(
         "http://localhost:8080/api/create/reservation",
         data
@@ -103,9 +108,11 @@ export default function CustomModal({
     }
 
     try {
-      await sendRequest(reservationData);
-      if (onReservationCreated) onReservationCreated();
-      onOpenChange(false);
+      const result = await sendRequest(reservationData);
+      if (result) {
+        if (onReservationCreated) onReservationCreated();
+        onOpenChange(false);
+      }
     } catch (error) {
       console.log("Submit failed, modal remains open for correction.");
     }

@@ -72,9 +72,9 @@ function AppContent() {
       return;
     }
 
-    // Check if user has permission to delete (admin or owner)
+    // Regular users can only delete their own reservations
     if (userRole !== 'ADMIN' && currentUser.email !== reservation.email) {
-      alert("You don't have permission to delete this reservation.");
+      alert("You can only delete your own reservations.");
       return;
     }
 
@@ -144,11 +144,6 @@ function AppContent() {
           <div className="flex items-center gap-4">
             {currentUser ? (
               <>
-                <span className="text-gray-700">
-                  {userRole === 'ADMIN'
-                    ? 'Welcome, Admin!'
-                    : `Welcome, ${getFirstName(currentUser.displayName)}!`}
-                </span>
                 <Button onPress={onOpen} color="primary" variant="solid">
                   New Reservation
                 </Button>

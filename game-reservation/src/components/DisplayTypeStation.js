@@ -30,7 +30,7 @@ const DisplayTypeStation = ({
           <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#4338ca' }}>{title}</h2>
           <div>
             <Chip color="success" size="md">
-              Active {stationType}s: {activeCount} / {maxCount}
+              Active {stationType}s: {maxCount - activeCount} / {maxCount}
             </Chip>
             <Chip color="warning" size="md" style={{ marginLeft: '0.5rem' }}>
               {stationType} Waitlist: {waitlistCount}
@@ -54,11 +54,12 @@ const DisplayTypeStation = ({
               {activeReservations.length === 0 && (
                 <p style={{ color: '#4b5563' }}>No active {stationType.toLowerCase()} sessions.</p>
               )}
-              <Accordion variant="splitted">
+              <Accordion variant="splitted" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {activeReservations.map((item) => (
                   <AccordionItem
                     key={item._id}
                     aria-label={`${item.name}'s Reservation`}
+                    style={{ marginBottom: '1rem' }}
                     title={
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingRight: '1rem' }}>
                         <p style={{ fontWeight: '600' }}>{item.name}</p>
@@ -138,11 +139,12 @@ const DisplayTypeStation = ({
               {waitlistedReservations.length === 0 && (
                 <p style={{ color: '#4b5563' }}>{stationType} waitlist is empty.</p>
               )}
-              <Accordion variant="splitted">
+              <Accordion variant="splitted" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {waitlistedReservations.map((item, index) => (
                   <AccordionItem
                     key={item._id}
                     aria-label={`${item.name}'s Waitlist Entry`}
+                    style={{ marginBottom: '1rem' }}
                     title={
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingRight: '1rem' }}>
                         <p style={{ fontWeight: '600' }}>#{index + 1}: {item.name}</p>
