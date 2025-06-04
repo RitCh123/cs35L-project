@@ -71,11 +71,11 @@ const DisplayTypeStation = ({
       <CardBody style={{ padding: '1.5rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
           <div style={{ marginBottom: '2.5rem' }}>
-            <h3 style={{ 
-              fontSize: '1.125rem', 
-              fontWeight: '500', 
-              marginBottom: '1.5rem', 
-              color: '#1f2937' 
+            <h3 style={{
+              fontSize: '1.125rem',
+              fontWeight: '500',
+              marginBottom: '1.5rem',
+              color: '#1f2937'
             }}>
               Active {stationType} Sessions
             </h3>
@@ -87,7 +87,7 @@ const DisplayTypeStation = ({
                 {activeReservations.map((item, index) => {
                   // Only show active sessions to admins or the user themselves
                   if (!canSeeFullDetails(item)) return null;
-                  
+
                   return (
                     <AccordionItem
                       key={item._id}
@@ -99,10 +99,10 @@ const DisplayTypeStation = ({
                           {canSeeFullDetails(item) && (
                             <div style={{ display: 'flex', gap: '0.75rem' }}>
                               {userRole === 'ADMIN' && (
-                                <Button 
-                                  size="md" 
-                                  color="success" 
-                                  variant="ghost" 
+                                <Button
+                                  size="md"
+                                  color="success"
+                                  variant="ghost"
                                   onPress={() => onComplete(item._id)}
                                   style={{
                                     padding: '0.75rem 1.5rem',
@@ -113,10 +113,10 @@ const DisplayTypeStation = ({
                                   Complete
                                 </Button>
                               )}
-                              <Button 
-                                size="md" 
-                                color="danger" 
-                                variant="ghost" 
+                              <Button
+                                size="md"
+                                color="danger"
+                                variant="ghost"
                                 onPress={() => onDelete(item._id)}
                                 style={{
                                   padding: '0.75rem 1.5rem',
@@ -148,7 +148,11 @@ const DisplayTypeStation = ({
                           <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Console: {item.consoleType}</p>
                         )}
                         <p style={{ fontSize: '0.875rem', color: '#059669', fontWeight: '500' }}>
-                          Ends: {item.endTime ? new Date(item.endTime).toLocaleTimeString() : "N/A"}
+                          Ends: {item.endTime ? new Date(item.endTime).toLocaleTimeString(undefined, {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true // Set to true for 12-hour format
+                          }) : "N/A"}
                         </p>
                       </div>
                     </AccordionItem>
@@ -161,11 +165,11 @@ const DisplayTypeStation = ({
           <Divider style={{ margin: '1rem 0' }} />
 
           <div>
-            <h3 style={{ 
-              fontSize: '1.125rem', 
-              fontWeight: '500', 
-              marginBottom: '1.5rem', 
-              color: '#1f2937' 
+            <h3 style={{
+              fontSize: '1.125rem',
+              fontWeight: '500',
+              marginBottom: '1.5rem',
+              color: '#1f2937'
             }}>
               {stationType} Waitlist
             </h3>
@@ -185,10 +189,10 @@ const DisplayTypeStation = ({
                           #{index + 1}: {canSeeFullDetails(item) ? item.name : getPlaceholderName(index)}
                         </p>
                         {canSeeFullDetails(item) && (
-                          <Button 
-                            size="md" 
-                            color="danger" 
-                            variant="ghost" 
+                          <Button
+                            size="md"
+                            color="danger"
+                            variant="ghost"
                             onPress={() => onDelete(item._id)}
                             style={{
                               padding: '0.75rem 1.5rem',
