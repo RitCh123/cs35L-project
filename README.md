@@ -1,11 +1,11 @@
 # Eclipse Gaming Lounge 
 Naren Sathishkumar, Dhwani Beesanahalli, Nikhil Dewitt, Rithvik Chavali
 
-## Get Started
-
 ### Description
 
 The Eclipse Gaming Lounge reservation system is designed to help both gamers and administrators alike in handling reservations times. During busy hours, administrators can feel lost in handling wait times, managing queues, and helping fellow gamers with any troubles. We designed this reservation system to alleviate any unforseen problems that administrators and gamers have about reserving times in the gaming lounge.
+
+## Get Started
 
 ### Cloning
 
