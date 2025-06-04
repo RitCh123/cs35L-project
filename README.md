@@ -15,11 +15,17 @@ Alternatively, you can download the tarball provided in the project submission.
 
 ### Running Development
 
-Once you have obtained a local copy of the source code, run
+Once you have obtained a local copy of the source code, enter into the ```cs35L-project``` folder from the cloned Github or the tarball file, wherever you have a local copy on your computer. Once you've entered into the ```cs35L-project``` directory, run the following command:
 
 ``` cd game-reservation ```
 
-to enter the program folder. Here, run 
+to enter the program folder. After entering the ```game-reservation``` folder, run
+
+```npm install```
+
+to install all packages and dependencies locally on your computer. Running ```npm``` will automatically install these packages, but we have had some dependency version conflicts, and running the command above fixes those issues. 
+
+After installing all the packages, run
 
 ```npm run dev```
 
