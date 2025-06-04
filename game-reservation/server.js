@@ -642,8 +642,7 @@ app.post("/api/create/profile", async (req, res) => {
   try {
     console.log("Received request for profile creation:", req.body);
     const db = client.db(dbName);
-    // Reverted: interestedGames, modes, availability, playStyle removed
-    const { name, email, game, mode, time } = req.body;
+    const { name, email, game, mode, time, playStyle } = req.body;
 
     const existing = await db.collection("profiles").findOne({ email });
     if (existing) {
@@ -656,7 +655,7 @@ app.post("/api/create/profile", async (req, res) => {
       game, 
       mode, 
       time, 
-      // Reverted: interestedGames, modes, availability, playStyle removed
+      playStyle,
       openToFriends: false,
       createdAt: new Date(),
     };
@@ -708,7 +707,7 @@ app.post("/api/update/profile", async (req, res) => {
     }
 
     // Reverted: interestedGames, modes, availability, playStyle removed from allowedFields
-    const allowedFields = ["name", "game", "mode", "time"];
+    const allowedFields = ["name", "game", "mode", "time", "playStyle"];
     const update = {};
     for (const key of allowedFields) {
       if (fieldsToUpdate[key] !== undefined) {
