@@ -477,7 +477,7 @@ app.post("/api/create/reservation", async (req, res) => {
       seatTogether: reservationType === "PC" ? !!seatTogether : false,
       preferredGame: reservationType === "PC" ? (preferredGame === "ANY" ? null : preferredGame) : null,
       consoleType: reservationType === "CONSOLE" ? consoleType : null,
-      partyMembers: [email],
+      partyMembers: req.body.partyMembers || [email],
     };
     
     if (reservationType === "PC") {
@@ -488,8 +488,20 @@ app.post("/api/create/reservation", async (req, res) => {
         if (reservationData.preferredGame === "APEX") {
             reservationData.preferredGame = "Apex Legends";
         }
+        
+        // Validate party members length matches party size
+        if (reservationData.partyMembers.length !== reservationData.partySize) {
+            console.error(`Validation Error: Party members count (${reservationData.partyMembers.length}) does not match party size (${reservationData.partySize}).`);
+            return res.status(400).json({ message: "Number of party members must match party size." });
+        }
 
-        console.log("PC Reservation. Party member email validation removed.");
+        // Ensure requester is in party members
+        if (!reservationData.partyMembers.includes(email)) {
+            console.error("Validation Error: Requester must be in party members.");
+            return res.status(400).json({ message: "Requester must be included in party members." });
+        }
+
+        console.log("PC Reservation. Party members validated.");
 
     } else if (reservationType === "CONSOLE") {
         if (!consoleType) {

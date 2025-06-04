@@ -52,13 +52,46 @@ export default function CustomModal({
   const [partySize, setPartySize] = useState(1);
   const [seatTogether, setSeatTogether] = useState(false);
   const [preferredGame, setPreferredGame] = useState("ANY");
+  const [profiles, setProfiles] = useState([]);
+  const [selectedFriends, setSelectedFriends] = useState([]);
 
   useEffect(() => {
     setSelectedConsoleType(null);
     setPartySize(1);
     setSeatTogether(false);
     setPreferredGame("ANY");
+    setSelectedFriends([]);
   }, [selectedReservationType]);
+
+  // Load profiles when modal opens
+  useEffect(() => {
+    if (isOpen && currentUser) {
+      axios.get("http://localhost:8080/api/view/profiles")
+        .then((res) => {
+          // Filter out current user and map to format needed for select
+          const filteredProfiles = res.data
+            .filter(profile => profile.email !== currentUser.email)
+            .map(profile => ({
+              key: profile._id,
+              label: profile.email.split('@')[0], // Use email username as display name
+              email: profile.email,
+              name: profile.email.split('@')[0]
+            }));
+          setProfiles(filteredProfiles);
+        })
+        .catch((err) => {
+          console.error("Error fetching profiles:", err);
+          setProfiles([]);
+        });
+    }
+  }, [isOpen, currentUser]);
+
+  // Reset selected friends when party size changes
+  useEffect(() => {
+    if (selectedFriends.length >= partySize) {
+      setSelectedFriends(prev => prev.slice(0, partySize - 1));
+    }
+  }, [partySize]);
 
   const sendRequest = async (data) => {
     try {
@@ -103,9 +136,23 @@ export default function CustomModal({
     if (selectedReservationType === "PC") {
       reservationData.seatTogether = seatTogether;
       reservationData.preferredGame = preferredGame;
+      // Always include the current user's email in party members
+      const partyMembers = [currentUser.email];
+      if (selectedFriends.length > 0) {
+        // Add selected friends' emails
+        selectedFriends.forEach(friendId => {
+          const friend = profiles.find(p => p.key === friendId);
+          if (friend) {
+            partyMembers.push(friend.email);
+          }
+        });
+      }
+      reservationData.partyMembers = partyMembers;
     } else if (selectedReservationType === "CONSOLE") {
       reservationData.consoleType = selectedConsoleType;
     }
+
+    console.log("Final reservation data:", reservationData); // Debug log
 
     try {
       const result = await sendRequest(reservationData);
@@ -124,6 +171,8 @@ export default function CustomModal({
     if (selectedReservationType === "CONSOLE" && !selectedConsoleType) return true;
     if (selectedReservationType === "PC") {
       if (!partySize) return true;
+      // If party size > 1, require at least one friend selected
+      if (partySize > 1 && selectedFriends.length === 0) return true;
     }
     return false;
   };
@@ -192,6 +241,28 @@ export default function CustomModal({
                         </SelectItem>
                       ))}
                     </Select>
+
+                    {partySize > 1 && (
+                      <Select
+                        label="Select Friends"
+                        placeholder="Choose friends to invite"
+                        selectedKeys={selectedFriends}
+                        onSelectionChange={(keys) => {
+                          console.log("Selected keys:", keys); // Debug log
+                          setSelectedFriends(Array.from(keys));
+                        }}
+                        className="max-w-base mt-4"
+                        isRequired
+                        selectionMode="multiple"
+                        isDisabled={profiles.length === 0}
+                      >
+                        {profiles.map((profile) => (
+                          <SelectItem key={profile.key} value={profile.key}>
+                            {profile.label}
+                          </SelectItem>
+                        ))}
+                      </Select>
+                    )}
 
                     <Select
                       label="Preferred Game (PC)"
