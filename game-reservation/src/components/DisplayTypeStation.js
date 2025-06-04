@@ -52,6 +52,20 @@ const DisplayTypeStation = ({
     return userRole === 'ADMIN' || (currentUser && currentUser.email === reservation.email);
   };
 
+  // Function to check if a reservation is expired
+  const isReservationExpired = (reservation) => {
+    if (!reservation.endTime) return false;
+    const now = new Date();
+    const endTime = new Date(reservation.endTime);
+    return endTime < now;
+  };
+
+  // Filter out expired reservations
+  const filteredActiveReservations = activeReservations.filter(res => !isReservationExpired(res));
+  
+  // Recalculate active count based on non-expired reservations
+  const actualActiveCount = maxCount - filteredActiveReservations.length;
+
   return (
     <Card className="flex-1">
       <CardHeader style={{ padding: '1.5rem' }}>
@@ -59,7 +73,7 @@ const DisplayTypeStation = ({
           <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#4338ca' }}>{title}</h2>
           <div>
             <Chip color="success" size="md">
-              Active {stationType}s: {maxCount - activeCount} / {maxCount}
+              Active {stationType}s: {actualActiveCount} / {maxCount}
             </Chip>
             <Chip color="warning" size="md" style={{ marginLeft: '0.5rem' }}>
               {stationType} Waitlist: {waitlistCount}
@@ -80,11 +94,11 @@ const DisplayTypeStation = ({
               Active {stationType} Sessions
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {activeReservations.length === 0 && (
+              {filteredActiveReservations.length === 0 && (
                 <p style={{ color: '#4b5563' }}>No active {stationType.toLowerCase()} sessions.</p>
               )}
               <Accordion variant="splitted" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {activeReservations.map((item, index) => {
+                {filteredActiveReservations.map((item, index) => {
                   // Only show active sessions to admins or the user themselves
                   if (!canSeeFullDetails(item)) return null;
 

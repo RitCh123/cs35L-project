@@ -243,25 +243,33 @@ export default function CustomModal({
                     </Select>
 
                     {partySize > 1 && (
-                      <Select
-                        label="Select Friends"
-                        placeholder="Choose friends to invite"
-                        selectedKeys={selectedFriends}
-                        onSelectionChange={(keys) => {
-                          console.log("Selected keys:", keys); // Debug log
-                          setSelectedFriends(Array.from(keys));
-                        }}
-                        className="max-w-base mt-4"
-                        isRequired
-                        selectionMode="multiple"
-                        isDisabled={profiles.length === 0}
-                      >
-                        {profiles.map((profile) => (
-                          <SelectItem key={profile.key} value={profile.key}>
-                            {profile.label}
-                          </SelectItem>
-                        ))}
-                      </Select>
+                      <>
+                        <Select
+                          label="Select Friends"
+                          placeholder="Choose friends to invite"
+                          selectedKeys={selectedFriends}
+                          onSelectionChange={(keys) => {
+                            const keyArray = Array.from(keys);
+                            // Limit selection to partySize - 1 (accounting for current user)
+                            if (keyArray.length <= partySize - 1) {
+                              setSelectedFriends(keyArray);
+                            }
+                          }}
+                          className="max-w-base mt-4"
+                          isRequired
+                          selectionMode="multiple"
+                          isDisabled={profiles.length === 0}
+                        >
+                          {profiles.map((profile) => (
+                            <SelectItem key={profile.key} value={profile.key}>
+                              {profile.label}
+                            </SelectItem>
+                          ))}
+                        </Select>
+                        <p style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '0.25rem' }}>
+                          You can select up to {partySize - 1} friend{partySize - 1 !== 1 ? 's' : ''} (Party size: {partySize})
+                        </p>
+                      </>
                     )}
 
                     <Select
@@ -277,7 +285,9 @@ export default function CustomModal({
                         </SelectItem>
                       ))}
                     </Select>
-                    <p className="text-xs mt-1 text-gray-500">Note: Apex Legends is only on specific PCs (J & M).</p>
+                    <p style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '0.25rem' }}>
+                      Note: Apex Legends is only on specific PCs (J & M).
+                    </p>
                     
                     <div className="mt-4 flex items-center">
                         <Checkbox 
