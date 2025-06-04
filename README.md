@@ -15,7 +15,7 @@ To get started, locally clone the Github repoistory via the command:
 
 Alternatively, you can download the tarball provided in the project submission.
 
-**If you decide to clone the Github repoistory manually, you must separately add a ```.env``` file containg the list of database and Firebase passwords**.
+**If you decide to clone the Github repoistory manually, you must separately add a ```.env``` file containing the list of database and Firebase passwords**. The filepath for the ```.env``` file should be as follows: ```cs35L-project/game-reservation/.env```.
 
 ### Running Development
 
