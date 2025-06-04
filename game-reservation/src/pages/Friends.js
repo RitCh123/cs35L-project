@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../firebase/AuthContext';
-import { Button } from "@heroui/button";
+import { Button, Input, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Switch, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Card, CardBody, Avatar, Chip, Tooltip, Badge } from "@heroui/react";
 import { useDisclosure } from "@heroui/react";
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 
 import FriendModal from "../components/FriendModal.js";
 
-
 export default function Friends() {
-
   const {
     isOpen: isProfileOpen,
     onOpen: onOpenProfile,
@@ -25,7 +23,7 @@ export default function Friends() {
 
   // New state for the message modal
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
-  const [currentFriendForModal, setCurrentFriendForModal] = useState(null); // Will store profile._id
+  const [currentFriendForModal, setCurrentFriendForModal] = useState(null);
   const [customMessage, setCustomMessage] = useState('');
   const [sendingEmailLoading, setSendingEmailLoading] = useState(false);
 
@@ -74,7 +72,7 @@ export default function Friends() {
     loadData();
   }, [currentUser]);
 
-  // Effect for filtering profiles based on search query or when profiles data changes
+  // Effect for filtering profiles based on search query
   useEffect(() => {
     const filtered = profiles.filter(profile => {
       const searchLower = searchQuery.toLowerCase();
@@ -128,7 +126,7 @@ export default function Friends() {
 
   const openMessageModal = (friendProfileId) => {
     setCurrentFriendForModal(friendProfileId);
-    setCustomMessage(''); // Reset message
+    setCustomMessage('');
     setIsMessageModalOpen(true);
   };
 
@@ -180,7 +178,6 @@ export default function Friends() {
   };
 
   const handleProfileUpdated = async () => {
-    // Refresh the profiles list when a profile is created or updated
     await refreshProfileListFromServer();
   };
 
@@ -189,21 +186,12 @@ export default function Friends() {
       <div className="flex justify-between items-center mb-6">
         <div className="flex-1 flex items-center">
           <Link to="/">
-            <button
-              style={{
-                borderRadius: "50%",
-                width: "50px",
-                height: "50px",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                fontSize: "24px",
-                backgroundColor: "blue", // blue-600
-                color: "white",
-                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-                border: "none",
-                outline: "none",
-              }}
+            <Button
+              isIconOnly
+              color="primary"
+              variant="solid"
+              radius="full"
+              size="lg"
               aria-label="Home"
             >
               <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
@@ -216,7 +204,7 @@ export default function Friends() {
                   fill="none"
                 />
               </svg>
-            </button>
+            </Button>
           </Link>
         </div>
         <div className="flex-1 flex justify-center">
@@ -231,160 +219,172 @@ export default function Friends() {
             Update Profile
           </Button>
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-700">Open to Friends</span>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                className="sr-only"
-                checked={openToFriends}
-                onChange={handleToggleFriends}
-              />
-              <div 
-                className="relative w-12 h-6 rounded-full border-2 transition-all duration-300 ease-in-out"
-                style={{
-                  backgroundColor: openToFriends ? '#10b981' : '#d1d5db',
-                  borderColor: openToFriends ? '#10b981' : '#9ca3af'
-                }}
-              >
-                <div 
-                  className="w-5 h-5 bg-white rounded-full shadow-lg absolute top-0.5 transition-all duration-300 ease-in-out"
-                  style={{
-                    transform: openToFriends ? 'translateX(20px)' : 'translateX(0px)'
-                  }}
-                ></div>
-              </div>
-            </label>
+            <span className="text-sm font-medium">Open to Friends</span>
+            <Switch
+              checked={openToFriends}
+              onChange={handleToggleFriends}
+              color="primary"
+            />
           </div>
         </div>
       </div>
       
-      <div className="bg-white rounded-lg shadow p-4 mb-4">
-        <input
-          type="text"
-          placeholder="Search by name, email, game, mode, play style, etc."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-        />
+      <div style={{ marginTop: '3rem' }}>
+        <div className="mb-4" style={{ marginBottom: '2rem' }}>
+          <Input
+            type="text"
+            placeholder="Search by name, email, game, mode, play style, etc."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            variant="bordered"
+            radius="lg"
+            size="lg"
+            fullWidth
+            startContent={
+              <svg
+                aria-hidden="true"
+                fill="none"
+                focusable="false"
+                height="1em"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                width="1em"
+                className="text-default-400"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+            }
+          />
+        </div>
+
+        <div style={{ marginBottom: '2rem' }}>
+          <Table aria-label="Friends list">
+            <TableHeader>
+              <TableColumn>Player</TableColumn>
+              <TableColumn>Contact</TableColumn>
+              <TableColumn>Game Details</TableColumn>
+              <TableColumn>Availability</TableColumn>
+              <TableColumn>Action</TableColumn>
+            </TableHeader>
+            <TableBody>
+              {filteredProfiles.map((profile) => (
+                <TableRow key={profile._id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar
+                        name={profile.name}
+                        size="md"
+                        radius="full"
+                        color="primary"
+                      />
+                      <div>
+                        <p className="text-lg font-semibold">{profile.name}</p>
+                        <Chip
+                          size="sm"
+                          variant="flat"
+                          color={profile.playStyle === 'Competitive' ? 'danger' : 'success'}
+                        >
+                          {profile.playStyle || 'Casual'}
+                        </Chip>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip content="Send email">
+                      <div className="cursor-pointer">
+                        <p className="text-sm text-default-500">{profile.email}</p>
+                      </div>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-2">
+                      <Badge color="primary" variant="flat" size="sm">
+                        {profile.game || 'N/A'}
+                      </Badge>
+                      <Badge color="secondary" variant="flat" size="sm">
+                        {profile.mode || 'N/A'}
+                      </Badge>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      size="sm"
+                      variant="dot"
+                      color={profile.time ? 'success' : 'default'}
+                    >
+                      {profile.time || 'Not specified'}
+                    </Chip>
+                  </TableCell>
+                  <TableCell>
+                    {profile.email !== currentUser?.email && (
+                      sentEmails.has(profile._id) ? (
+                        <Button
+                          color="default"
+                          variant="flat"
+                          isDisabled
+                          startContent={<CheckIcon />}
+                        >
+                          Request Sent
+                        </Button>
+                      ) : (
+                        <Button
+                          color="primary"
+                          variant="solid"
+                          onPress={() => openMessageModal(profile._id)}
+                          startContent={<AddFriendIcon />}
+                        >
+                          Friend
+                        </Button>
+                      )
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
-      <div className="overflow-x-auto bg-white shadow-lg rounded-lg">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Game</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mode</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Play Style</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredProfiles.map((profile) => (
-              <tr key={profile._id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{profile.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{profile.email}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{profile.game || 'N/A'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{profile.mode || 'N/A'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{profile.time || 'N/A'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{profile.playStyle || 'Casual'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  {profile.email !== currentUser?.email && (
-                    sentEmails.has(profile._id) ? (
-
-                      <button
-                        style={{
-                          color: "black",
-                          borderRadius: "5px",
-                          padding: "10px 20px",
-                          fontSize: "16px",
-                        }}
-                        className="px-3 py-1.5 text-xs font-semibold rounded-md shadow-sm bg-gray-300 text-gray-500 cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400"
-                      >
-                        Request Sent
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => openMessageModal(profile._id)}
-                        style={{
-                          backgroundColor: "blue",
-                          color: "white",
-                          borderRadius: "5px",
-                          padding: "10px 20px",
-                          fontSize: "16px",
-                        }}
-                        className="px-3 py-1.5 text-xs font-semibold rounded-md shadow-sm bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      >
-                        Friend
-                      </button>
-                    )
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Message Modal */}
-      {isMessageModalOpen && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md mx-auto">
-            <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">Send a Message to Friend</h3>
-            <textarea
+      <Modal 
+        isOpen={isMessageModalOpen} 
+        onClose={() => setIsMessageModalOpen(false)}
+      >
+        <ModalContent>
+          <ModalHeader>Send a Message to Friend</ModalHeader>
+          <ModalBody>
+            <Input
+              type="text"
+              placeholder="Optional: Add a personal message..."
               value={customMessage}
               onChange={(e) => setCustomMessage(e.target.value)}
-              placeholder="Optional: Add a personal message..."
-              rows={4}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 mb-4"
+              variant="bordered"
+              fullWidth
             />
-            <div className="flex justify-end space-x-3 mt-4">
-              <button
-                type="button"
-                style={{
-                  
-                  borderRadius: "5px",
-                  padding: "10px 20px",
-                  fontSize: "16px",
-                }}
-                onClick={() => setIsMessageModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Cancel
-              </button>
-              {
-                sendingEmailLoading ? (
-                  <button
-                    disabled
-                    type="button"
-                    className="px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm bg-gray-400 cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
-                  >
-                    Sending...
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleSendMessageAndAddFriend}
-                    style={{
-                      color: "black",
-                      borderRadius: "5px",
-                      padding: "10px 20px",
-                      fontSize: "16px",
-                    }}
-                    className="px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Send Request
-                  </button>
-                )
-              }
-            </div>
-          </div>
-        </div>
-      )}
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              color="default"
+              variant="light"
+              onPress={() => setIsMessageModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              color="primary"
+              variant="solid"
+              onPress={handleSendMessageAndAddFriend}
+              isLoading={sendingEmailLoading}
+            >
+              Send Request
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
       
-      {/* Add the FriendModal component */}
       <FriendModal 
         isOpen={isProfileOpen} 
         onOpenChange={onProfileOpenChange} 
@@ -392,4 +392,18 @@ export default function Friends() {
       />
     </div>
   );
-} 
+}
+
+const CheckIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const AddFriendIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M16 21V19C16 17.9391 15.5786 16.9217 14.8284 16.1716C14.0783 15.4214 13.0609 15 12 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M8.5 11C10.7091 11 12.5 9.20914 12.5 7C12.5 4.79086 10.7091 3 8.5 3C6.29086 3 4.5 4.79086 4.5 7C4.5 9.20914 6.29086 11 8.5 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M20 8V14M17 11H23" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+); 
