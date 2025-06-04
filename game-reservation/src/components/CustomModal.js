@@ -244,28 +244,28 @@ export default function CustomModal({
 
                     {partySize > 1 && (
                       <>
-                        <Select
-                          label="Select Friends"
-                          placeholder="Choose friends to invite"
-                          selectedKeys={selectedFriends}
-                          onSelectionChange={(keys) => {
+                      <Select
+                        label="Select Friends"
+                        placeholder="Choose friends to invite"
+                        selectedKeys={selectedFriends}
+                        onSelectionChange={(keys) => {
                             const keyArray = Array.from(keys);
                             // Limit selection to partySize - 1 (accounting for current user)
                             if (keyArray.length <= partySize - 1) {
                               setSelectedFriends(keyArray);
                             }
-                          }}
-                          className="max-w-base mt-4"
-                          isRequired
-                          selectionMode="multiple"
-                          isDisabled={profiles.length === 0}
-                        >
-                          {profiles.map((profile) => (
-                            <SelectItem key={profile.key} value={profile.key}>
-                              {profile.label}
-                            </SelectItem>
-                          ))}
-                        </Select>
+                        }}
+                        className="max-w-base mt-4"
+                        isRequired
+                        selectionMode="multiple"
+                        isDisabled={profiles.length === 0}
+                      >
+                        {profiles.map((profile) => (
+                          <SelectItem key={profile.key} value={profile.key}>
+                            {profile.label}
+                          </SelectItem>
+                        ))}
+                      </Select>
                         <p style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '0.25rem' }}>
                           You can select up to {partySize - 1} friend{partySize - 1 !== 1 ? 's' : ''} (Party size: {partySize})
                         </p>

@@ -63,8 +63,16 @@ const DisplayTypeStation = ({
   // Filter out expired reservations
   const filteredActiveReservations = activeReservations.filter(res => !isReservationExpired(res));
   
-  // Recalculate active count based on non-expired reservations
-  const actualActiveCount = maxCount - filteredActiveReservations.length;
+  // Calculate total occupied slots based on party sizes for PCs
+  const totalOccupiedSlots = filteredActiveReservations.reduce((total, res) => {
+    if (stationType === "PC") {
+      return total + (res.partySize || 1); // Use party size for PCs
+    }
+    return total + 1; // Console reservations always count as 1
+  }, 0);
+
+  // Calculate available slots
+  const availableSlots = maxCount - totalOccupiedSlots;
 
   return (
     <Card className="flex-1">
@@ -73,7 +81,7 @@ const DisplayTypeStation = ({
           <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#4338ca' }}>{title}</h2>
           <div>
             <Chip color="success" size="md">
-              Active {stationType}s: {actualActiveCount} / {maxCount}
+              Available {stationType}s: {availableSlots} / {maxCount}
             </Chip>
             <Chip color="warning" size="md" style={{ marginLeft: '0.5rem' }}>
               {stationType} Waitlist: {waitlistCount}
