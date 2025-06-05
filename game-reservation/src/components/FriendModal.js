@@ -134,7 +134,6 @@ export default function FriendModal({ isOpen, onOpenChange, onProfileUpdated }) 
       <ModalContent>
         <ModalHeader>Update Profile</ModalHeader>
         <ModalBody>
-          {/* Profile creation fields (no name/email, no search) */}
           <Select
             label="Game"
             placeholder="Select your favorite game"
