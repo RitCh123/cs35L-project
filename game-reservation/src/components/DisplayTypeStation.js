@@ -228,12 +228,17 @@ const DisplayTypeStation = ({
                             <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Party Size: {item.partySize}</p>
                             <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Seat Together: {item.seatTogether ? "Yes" : "No"}</p>
                             <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Game: {item.preferredGame || "Any"}</p>
+                            {item.partyMembers && item.partyMembers.length > 1 && (
+                              <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>
+                                Party Members: {item.partyMembers.slice(1).join(', ')}
+                              </p>
+                            )}
                           </>
                         ) : (
                           <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Console: {item.consoleType}</p>
                         )}
                         <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>
-                          Status: <Chip size="sm" color="default">{item.status}</Chip>
+                          Status: <Chip size="sm" color="warning">Waitlisted</Chip>
                         </p>
                         <p style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.5rem' }}>
                           Queued at: {new Date(item.createdAt).toLocaleTimeString()}

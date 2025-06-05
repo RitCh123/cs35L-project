@@ -66,6 +66,14 @@ export default function CustomModal({
     setSelectedFriends([]);
   }, [selectedReservationType]);
 
+  // Add effect to handle Apex Legends party size restrictions
+  useEffect(() => {
+    if (preferredGame === "APEX" && partySize > 2) {
+      setPartySize(2);
+      setSelectedFriends([]);
+    }
+  }, [preferredGame]);
+
   // Load profiles when modal opens
   useEffect(() => {
     if (isOpen && currentUser) {
@@ -126,6 +134,12 @@ export default function CustomModal({
   const handleSubmit = async () => {
     if (!currentUser) {
       showErrorAlert("Please sign in to make a reservation.");
+      return;
+    }
+
+    // Add Apex Legends party size validation
+    if (selectedReservationType === "PC" && preferredGame === "APEX" && partySize > 2) {
+      showErrorAlert("Apex Legends can only be played with a maximum of 2 players.");
       return;
     }
 
@@ -242,11 +256,13 @@ export default function CustomModal({
                       className="max-w-base mt-4"
                       isRequired
                     >
-                      {partySizeOptions.map((size) => (
-                        <SelectItem key={size.key.toString()} value={size.key.toString()}>
-                          {size.label}
-                        </SelectItem>
-                      ))}
+                      {partySizeOptions
+                        .filter(size => preferredGame !== "APEX" || size.key <= 2)
+                        .map((size) => (
+                          <SelectItem key={size.key.toString()} value={size.key.toString()}>
+                            {size.label}
+                          </SelectItem>
+                        ))}
                     </Select>
 
                     {partySize > 1 && (
@@ -302,8 +318,13 @@ export default function CustomModal({
                         <Checkbox 
                             isSelected={seatTogether} 
                             onValueChange={setSeatTogether}
+                            isDisabled={preferredGame === "APEX"}
                         />
-                        <span className="ml-2 text-sm">Attempt to seat party together?</span>
+                        <span className="ml-2 text-sm">
+                          {preferredGame === "APEX" ? 
+                            "Seating together not available for Apex Legends" : 
+                            "Attempt to seat party together?"}
+                        </span>
                     </div>
                     <Link href="/pcs" target="_blank" className="text-sm mt-2 text-blue-600 hover:underline">
                         View PC Layout (A-M)
