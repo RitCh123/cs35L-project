@@ -1115,7 +1115,63 @@ app.post('/api/friends/reject/:requestId', async (req, res) => {
     });
   }
 });
-// End Added Friend Request Endpoints
+
+// Add endpoint to get accepted friends
+app.get('/api/friends/accepted', async (req, res) => {
+  try {
+    const { email } = req.query;
+    
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const db = client.db(dbName);
+    
+    // Find all accepted friend requests where the user is either sender or recipient
+    const acceptedRequests = await db.collection("friend_requests")
+      .find({
+        $or: [
+          { sender: email, status: "accepted" },
+          { recipient: email, status: "accepted" }
+        ]
+      })
+      .toArray();
+
+    // Transform the data to get friend emails
+    const friends = acceptedRequests.map(request => {
+      // If user was the sender, return recipient's email, otherwise return sender's email
+      return request.sender === email ? request.recipient : request.sender;
+    });
+
+    // Get profile information for each friend
+    const friendProfiles = await db.collection("profiles")
+      .find({ email: { $in: friends } })
+      .toArray();
+
+    // Create a map of email to profile for easy lookup
+    const profileMap = friendProfiles.reduce((map, profile) => {
+      map[profile.email] = profile;
+      return map;
+    }, {});
+
+    // Combine friend emails with their profile data
+    const friendsWithProfiles = friends.map(friendEmail => ({
+      email: friendEmail,
+      profile: profileMap[friendEmail] || null // Include null if no profile exists
+    }));
+
+    res.status(200).json({
+      friends: friendsWithProfiles,
+      count: friends.length
+    });
+  } catch (error) {
+    console.error('Error fetching accepted friends:', error);
+    res.status(500).json({ 
+      message: 'Error fetching accepted friends',
+      error: error.message 
+    });
+  }
+});
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {

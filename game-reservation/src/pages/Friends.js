@@ -31,6 +31,10 @@ export default function Friends() {
   const [pendingRequests, setPendingRequests] = useState([]);
   const [isLoadingRequests, setIsLoadingRequests] = useState(false);
 
+  // Add new state for accepted friends
+  const [acceptedFriends, setAcceptedFriends] = useState([]);
+  const [isLoadingFriends, setIsLoadingFriends] = useState(false);
+
   // Add new state for handling request actions
   const [processingRequest, setProcessingRequest] = useState(false);
 
@@ -267,6 +271,39 @@ export default function Friends() {
     }
   };
 
+  // Add new effect to fetch accepted friends
+  useEffect(() => {
+    const fetchAcceptedFriends = async () => {
+      if (!currentUser) return;
+      
+      setIsLoadingFriends(true);
+      try {
+        const response = await axios.get(`http://localhost:8080/api/friends/accepted?email=${currentUser.email}`);
+        setAcceptedFriends(response.data.friends);
+      } catch (err) {
+        console.error("Error fetching accepted friends:", err);
+      } finally {
+        setIsLoadingFriends(false);
+      }
+    };
+
+    fetchAcceptedFriends();
+  }, [currentUser]);
+
+  // Add function to refresh accepted friends
+  const refreshAcceptedFriends = async () => {
+    if (!currentUser) return;
+    setIsLoadingFriends(true);
+    try {
+      const response = await axios.get(`http://localhost:8080/api/friends/accepted?email=${currentUser.email}`);
+      setAcceptedFriends(response.data.friends);
+    } catch (err) {
+      console.error("Error refreshing accepted friends:", err);
+    } finally {
+      setIsLoadingFriends(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
@@ -316,7 +353,7 @@ export default function Friends() {
       </div>
       
       <div style={{ marginTop: '3rem' }}>
-        {/* Update Friend Requests Section */}
+        {/* Friend Requests Section */}
         {currentUser && (
           <div className="mb-8">
             <Accordion>
@@ -382,7 +419,6 @@ export default function Friends() {
                                 variant="flat"
                                 size="sm"
                                 onPress={() => handleAcceptRequest(request._id)}
-                                isLoading={processingRequest}
                                 isDisabled={processingRequest}
                               >
                                 Accept
@@ -392,11 +428,83 @@ export default function Friends() {
                                 variant="flat"
                                 size="sm"
                                 onPress={() => handleRejectRequest(request._id)}
-                                isLoading={processingRequest}
                                 isDisabled={processingRequest}
                               >
                                 Reject
                               </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardBody>
+                </Card>
+              </AccordionItem>
+
+              {/* New Accepted Friends AccordionItem */}
+              <AccordionItem
+                key="accepted-friends"
+                aria-label="Accepted Friends"
+                title={
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2">
+                      <span>Accepted Friends</span>
+                      {acceptedFriends.length > 0 && (
+                        <Badge color="success" variant="flat" size="sm">
+                          {acceptedFriends.length}
+                        </Badge>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="light"
+                      isIconOnly
+                      onPress={refreshAcceptedFriends}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M23 4V10H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M1 20V14H7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M3.51 9.00001C3.98 7.44001 4.85 6.06001 6.03 5.00001C7.21 3.94001 8.66 3.24001 10.2 2.98001C11.74 2.72001 13.32 2.91001 14.76 3.53001C16.2 4.15001 17.44 5.17001 18.33 6.48001L23 10M1 14L5.67 17.52C6.56 18.83 7.8 19.85 9.24 20.47C10.68 21.09 12.26 21.28 13.8 21.02C15.34 20.76 16.79 20.06 17.97 19C19.15 17.94 20.02 16.56 20.49 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </Button>
+                  </div>
+                }
+              >
+                <Card>
+                  <CardBody>
+                    {isLoadingFriends ? (
+                      <div className="flex justify-center p-4">
+                        <p>Loading friends...</p>
+                      </div>
+                    ) : acceptedFriends.length === 0 ? (
+                      <div className="text-center p-4 text-default-500">
+                        No accepted friends yet
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {acceptedFriends.map((friend) => (
+                          <div key={friend.email} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <Avatar
+                                name={friend.profile?.name || friend.email.split('@')[0]}
+                                size="md"
+                                radius="full"
+                                color="success"
+                              />
+                              <div>
+                                <p className="font-semibold">{friend.profile?.name || friend.email.split('@')[0]}</p>
+                                <p className="text-sm text-default-500">{friend.email}</p>
+                                {friend.profile && (
+                                  <div className="flex gap-2 mt-1">
+                                    <Badge color="primary" variant="flat" size="sm">
+                                      {friend.profile.game || 'No game'}
+                                    </Badge>
+                                    <Badge color="secondary" variant="flat" size="sm">
+                                      {friend.profile.playStyle || 'Casual'}
+                                    </Badge>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         ))}

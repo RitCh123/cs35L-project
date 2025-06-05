@@ -69,21 +69,21 @@ export default function CustomModal({
   // Load profiles when modal opens
   useEffect(() => {
     if (isOpen && currentUser) {
-      axios.get("http://localhost:8080/api/view/profiles")
+      axios.get(`http://localhost:8080/api/friends/accepted?email=${currentUser.email}`)
         .then((res) => {
-          // Filter out current user and map to format needed for select
-          const filteredProfiles = res.data
-            .filter(profile => profile.email !== currentUser.email)
-            .map(profile => ({
-              key: profile._id,
-              label: profile.email.split('@')[0], // Use email username as display name
-              email: profile.email,
-              name: profile.email.split('@')[0]
+          // Map accepted friends to format needed for select
+          const friendProfiles = res.data.friends
+            .filter(friend => friend.profile) // Only include friends with profiles
+            .map(friend => ({
+              key: friend.profile._id,
+              label: friend.profile.name || friend.email.split('@')[0], // Use profile name or email username
+              email: friend.email,
+              name: friend.profile.name || friend.email.split('@')[0]
             }));
-          setProfiles(filteredProfiles);
+          setProfiles(friendProfiles);
         })
         .catch((err) => {
-          console.error("Error fetching profiles:", err);
+          console.error("Error fetching accepted friends:", err);
           setProfiles([]);
         });
     }
@@ -274,7 +274,9 @@ export default function CustomModal({
                         ))}
                       </Select>
                         <p style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '0.25rem' }}>
-                          You can select up to {partySize - 1} friend{partySize - 1 !== 1 ? 's' : ''} (Party size: {partySize})
+                          {profiles.length === 0 
+                            ? "You need to have accepted friends to create a party. Add friends first!"
+                            : `You can select up to ${partySize - 1} friend${partySize - 1 !== 1 ? 's' : ''} (Party size: ${partySize})`}
                         </p>
                       </>
                     )}
