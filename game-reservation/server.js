@@ -964,6 +964,63 @@ app.post('/api/friends/dummy', async (req, res) => {
   }
 });
 
+// Add endpoint to create multiple dummy friend requests
+app.post('/api/friends/dummy/bulk', async (req, res) => {
+  try {
+    const db = client.db(dbName);
+    const { count = 5 } = req.body; // Default to 5 requests if not specified
+    
+    const dummySenders = [
+      "john.doe@ucla.edu",
+      "jane.smith@ucla.edu",
+      "alex.wong@ucla.edu",
+      "sarah.chen@ucla.edu",
+      "mike.johnson@ucla.edu",
+      "emma.wilson@ucla.edu",
+      "david.kim@ucla.edu",
+      "lisa.patel@ucla.edu"
+    ];
+
+    const createdRequests = [];
+    const recipient = "nikhildewitt@g.ucla.edu";
+
+    for (let i = 0; i < count; i++) {
+      const sender = dummySenders[i % dummySenders.length];
+      
+      // Check if this exact request already exists
+      const existingRequest = await db.collection("friend_requests").findOne({
+        sender: sender,
+        recipient: recipient,
+        status: "pending"
+      });
+
+      if (!existingRequest) {
+        const dummyRequest = {
+          sender: sender,
+          recipient: recipient,
+          status: "pending",
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+
+        const result = await db.collection("friend_requests").insertOne(dummyRequest);
+        createdRequests.push({ ...dummyRequest, _id: result.insertedId });
+      }
+    }
+    
+    res.status(201).json({ 
+      message: `Created ${createdRequests.length} new dummy friend requests`,
+      requests: createdRequests
+    });
+  } catch (error) {
+    console.error('Error creating bulk dummy friend requests:', error);
+    res.status(500).json({ 
+      message: 'Error creating bulk dummy friend requests',
+      error: error.message 
+    });
+  }
+});
+
 // Add endpoints for accepting/rejecting friend requests
 app.post('/api/friends/accept/:requestId', async (req, res) => {
   try {
