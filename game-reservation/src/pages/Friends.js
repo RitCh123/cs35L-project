@@ -75,6 +75,11 @@ export default function Friends() {
   // Effect for filtering profiles based on search query
   useEffect(() => {
     const filtered = profiles.filter(profile => {
+      // First filter out the current user's own profile
+      if (profile.email === currentUser?.email) {
+        return false;
+      }
+      
       const searchLower = searchQuery.toLowerCase();
       return (
         profile.name?.toLowerCase().includes(searchLower) ||
@@ -86,7 +91,7 @@ export default function Friends() {
       );
     });
     setFilteredProfiles(filtered);
-  }, [searchQuery, profiles]);
+  }, [searchQuery, profiles, currentUser]);
   
   const refreshProfileListFromServer = async () => {
     if (!currentUser) return;
@@ -320,26 +325,24 @@ export default function Friends() {
                     </Chip>
                   </TableCell>
                   <TableCell>
-                    {profile.email !== currentUser?.email && (
-                      sentEmails.has(profile._id) ? (
-                        <Button
-                          color="default"
-                          variant="flat"
-                          isDisabled
-                          startContent={<CheckIcon />}
-                        >
-                          Request Sent
-                        </Button>
-                      ) : (
-                        <Button
-                          color="primary"
-                          variant="solid"
-                          onPress={() => openMessageModal(profile._id)}
-                          startContent={<AddFriendIcon />}
-                        >
-                          Friend
-                        </Button>
-                      )
+                    {sentEmails.has(profile._id) ? (
+                      <Button
+                        color="default"
+                        variant="flat"
+                        isDisabled
+                        startContent={<CheckIcon />}
+                      >
+                        Request Sent
+                      </Button>
+                    ) : (
+                      <Button
+                        color="primary"
+                        variant="solid"
+                        onPress={() => openMessageModal(profile._id)}
+                        startContent={<AddFriendIcon />}
+                      >
+                        Friend
+                      </Button>
                     )}
                   </TableCell>
                 </TableRow>
