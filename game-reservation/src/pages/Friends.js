@@ -50,19 +50,7 @@ export default function Friends() {
       }
       try {
         const res = await axios.get("http://localhost:8080/api/view/profiles");
-        let allProfiles = res.data;
-        
-        const dummyProfile = {
-          _id: "dummy-nikhil",
-          name: "Nikhil",
-          email: "nikhildewitt@g.ucla.edu",
-          game: "Valorant",
-          mode: "Competitive",
-          time: "Evening",
-          playStyle: "Competitive"
-        };
-        
-        allProfiles = [...allProfiles, dummyProfile].map(p => ({
+        let allProfiles = res.data.map(p => ({
             ...p, 
             playStyle: p.playStyle || 'Casual' 
         }));
@@ -109,12 +97,10 @@ export default function Friends() {
     if (!currentUser) return;
     try {
       const res = await axios.get("http://localhost:8080/api/view/profiles");
-      let refreshedProfiles = res.data;
-      const dummyProfile = {
-          _id: "dummy-nikhil", name: "Nikhil", email: "nikhildewitt@g.ucla.edu",
-          game: "Valorant", mode: "Competitive", time: "Evening", playStyle: "Competitive"
-      };
-      refreshedProfiles = [...refreshedProfiles, dummyProfile].map(p => ({...p, playStyle: p.playStyle || 'Casual' }));
+      let refreshedProfiles = res.data.map(p => ({
+          ...p, 
+          playStyle: p.playStyle || 'Casual' 
+      }));
       setProfiles(refreshedProfiles); 
     } catch (err) {
       console.error("Error refreshing profile list:", err);
