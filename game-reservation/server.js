@@ -514,7 +514,8 @@ app.post("/api/create/reservation", async (req, res) => {
       reservationType,
       partySize: partySizeStr,
       seatTogether, 
-      preferredGame 
+      preferredGame,
+      partyMembers // Add this to destructure partyMembers from request body
     } = req.body;
 
     if (!email || !name || !reservationType) {
@@ -526,6 +527,12 @@ app.post("/api/create/reservation", async (req, res) => {
 
     console.log(`[Reservation Create] Parsed Party Size: ${partySize}`);
     console.log(`[Reservation Create] Requester Email: ${email}`);
+
+    // Validate that partyMembers includes the current user's email
+    if (partyMembers && !partyMembers.includes(email)) {
+      console.error("[Reservation Create] Validation Error: partyMembers must include the current user's email");
+      return res.status(400).json({ message: "partyMembers must include the current user's email" });
+    }
 
     const reservationData = {
       name,
@@ -539,7 +546,7 @@ app.post("/api/create/reservation", async (req, res) => {
       seatTogether: reservationType === "PC" ? !!seatTogether : false,
       preferredGame: reservationType === "PC" ? (preferredGame === "ANY" ? null : preferredGame) : null,
       consoleType: reservationType === "CONSOLE" ? consoleType : null,
-      partyMembers: [email], // Simplified, can be expanded later
+      partyMembers: partyMembers || [email], // Use partyMembers from request if provided, otherwise default to just the current user
     };
     
     if (reservationType === "PC") {
