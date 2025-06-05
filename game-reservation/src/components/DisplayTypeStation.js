@@ -105,51 +105,35 @@ const DisplayTypeStation = ({
               {filteredActiveReservations.length === 0 && (
                 <p style={{ color: '#4b5563' }}>No active {stationType.toLowerCase()} sessions.</p>
               )}
-              <Accordion variant="splitted" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {filteredActiveReservations.map((item, index) => {
-                  // Only show active sessions to admins or the user themselves
-                  if (!canSeeFullDetails(item)) return null;
-
-                  return (
+              {filteredActiveReservations.map((item, index) => (
+                canSeeFullDetails(item) ? (
+                  <Accordion key={item._id} variant="splitted">
                     <AccordionItem
                       key={item._id}
                       aria-label={`${item.name}'s Reservation`}
-                      style={{ marginBottom: '1rem' }}
                       title={
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingRight: '1rem' }}>
                           <p style={{ fontWeight: '600' }}>{item.name}</p>
-                          {canSeeFullDetails(item) && (
-                            <div style={{ display: 'flex', gap: '0.75rem' }}>
-                              {userRole === 'ADMIN' && (
-                                <Button
-                                  size="md"
-                                  color="success"
-                                  variant="ghost"
-                                  onPress={() => onComplete(item._id)}
-                                  style={{
-                                    padding: '0.75rem 1.5rem',
-                                    fontSize: '0.875rem',
-                                    fontWeight: '500'
-                                  }}
-                                >
-                                  Complete
-                                </Button>
-                              )}
+                          <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            {userRole === 'ADMIN' && (
                               <Button
                                 size="md"
-                                color="danger"
+                                color="success"
                                 variant="ghost"
-                                onPress={() => onDelete(item._id)}
-                                style={{
-                                  padding: '0.75rem 1.5rem',
-                                  fontSize: '0.875rem',
-                                  fontWeight: '500'
-                                }}
+                                onPress={() => onComplete(item._id)}
                               >
-                                Delete
+                                Complete
                               </Button>
-                            </div>
-                          )}
+                            )}
+                            <Button
+                              size="md"
+                              color="danger"
+                              variant="ghost"
+                              onPress={() => onDelete(item._id)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
                         </div>
                       }
                     >
@@ -160,7 +144,7 @@ const DisplayTypeStation = ({
                             <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Party Size: {item.partySize}</p>
                             <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Seat Together: {item.seatTogether ? "Yes" : "No"}</p>
                             <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Game: {item.preferredGame || "Any"}</p>
-                            <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Party Members: {item.partyMembers.slice(1).join(', ')}</p>
+                            <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Party Members: {item.partyMembers?.slice(1).join(', ') || 'None'}</p>
                             <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>
                               Assigned: {item.assignedPCs && item.assignedPCs.length > 0
                                 ? item.assignedPCs.join(', ')
@@ -174,14 +158,31 @@ const DisplayTypeStation = ({
                           Ends: {item.endTime ? new Date(item.endTime).toLocaleTimeString(undefined, {
                             hour: '2-digit',
                             minute: '2-digit',
-                            hour12: true // Set to true for 12-hour format
+                            hour12: true
                           }) : "N/A"}
                         </p>
                       </div>
                     </AccordionItem>
-                  );
-                })}
-              </Accordion>
+                  </Accordion>
+                ) : (
+                  <Card key={item._id} style={{ marginBottom: '0.5rem' }}>
+                    <CardBody style={{ padding: '1rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <p style={{ fontWeight: '600' }}>{getPlaceholderName(index)}</p>
+                          <p style={{ fontSize: '0.875rem', color: '#4b5563' }}>
+                            Ends: {item.endTime ? new Date(item.endTime).toLocaleTimeString(undefined, {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true
+                            }) : "N/A"}
+                          </p>
+                        </div>
+                      </div>
+                    </CardBody>
+                  </Card>
+                )
+              ))}
             </div>
           </div>
 
@@ -200,67 +201,64 @@ const DisplayTypeStation = ({
               {waitlistedReservations.length === 0 && (
                 <p style={{ color: '#4b5563' }}>{stationType} waitlist is empty.</p>
               )}
-              <Accordion variant="splitted" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {waitlistedReservations.map((item, index) => (
-                  <AccordionItem
-                    key={item._id}
-                    aria-label={`${canSeeFullDetails(item) ? item.name : getPlaceholderName(index)}'s Waitlist Entry`}
-                    style={{ marginBottom: '1rem' }}
-                    title={
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingRight: '1rem' }}>
-                        <p style={{ fontWeight: '600' }}>
-                          #{index + 1}: {canSeeFullDetails(item) ? item.name : getPlaceholderName(index)}
-                        </p>
-                        {canSeeFullDetails(item) && (
+              {waitlistedReservations.map((item, index) => (
+                canSeeFullDetails(item) ? (
+                  <Accordion key={item._id} variant="splitted">
+                    <AccordionItem
+                      key={item._id}
+                      aria-label={`${item.name}'s Waitlist Entry`}
+                      title={
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingRight: '1rem' }}>
+                          <p style={{ fontWeight: '600' }}>#{index + 1}: {item.name}</p>
                           <Button
                             size="md"
                             color="danger"
                             variant="ghost"
                             onPress={() => onDelete(item._id)}
-                            style={{
-                              padding: '0.75rem 1.5rem',
-                              fontSize: '0.875rem',
-                              fontWeight: '500'
-                            }}
                           >
                             Cancel
                           </Button>
+                        </div>
+                      }
+                    >
+                      <div style={{ padding: '1rem 0.5rem' }}>
+                        <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Email: {item.email}</p>
+                        {stationType === "PC" ? (
+                          <>
+                            <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Party Size: {item.partySize}</p>
+                            <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Seat Together: {item.seatTogether ? "Yes" : "No"}</p>
+                            <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Game: {item.preferredGame || "Any"}</p>
+                          </>
+                        ) : (
+                          <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Console: {item.consoleType}</p>
                         )}
-                      </div>
-                    }
-                  >
-                    <div style={{ padding: '1rem 0.5rem' }}>
-                      {canSeeFullDetails(item) ? (
-                        <>
-                          <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Email: {item.email}</p>
-                          {stationType === "PC" ? (
-                            <>
-                              <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Party Size: {item.partySize}</p>
-                              <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Seat Together: {item.seatTogether ? "Yes" : "No"}</p>
-                              <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Game: {item.preferredGame || "Any"}</p>
-                            </>
-                          ) : (
-                            <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>Console: {item.consoleType}</p>
-                          )}
-                          <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>
-                            Status: <Chip size="sm" color="default">{item.status}</Chip>
-                          </p>
-                          <p style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.5rem' }}>
-                            Queued at: {new Date(item.createdAt).toLocaleTimeString()}
-                          </p>
-                          {item.notes && (
-                            <p style={{ fontSize: '0.75rem', color: '#f97316' }}>Notes: {item.notes}</p>
-                          )}
-                        </>
-                      ) : (
                         <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.5rem' }}>
+                          Status: <Chip size="sm" color="default">{item.status}</Chip>
+                        </p>
+                        <p style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.5rem' }}>
                           Queued at: {new Date(item.createdAt).toLocaleTimeString()}
                         </p>
-                      )}
-                    </div>
-                  </AccordionItem>
-                ))}
-              </Accordion>
+                        {item.notes && (
+                          <p style={{ fontSize: '0.75rem', color: '#f97316' }}>Notes: {item.notes}</p>
+                        )}
+                      </div>
+                    </AccordionItem>
+                  </Accordion>
+                ) : (
+                  <Card key={item._id} style={{ marginBottom: '0.5rem' }}>
+                    <CardBody style={{ padding: '1rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <p style={{ fontWeight: '600' }}>#{index + 1}: {getPlaceholderName(index)}</p>
+                          <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                            Queued at: {new Date(item.createdAt).toLocaleTimeString()}
+                          </p>
+                        </div>
+                      </div>
+                    </CardBody>
+                  </Card>
+                )
+              ))}
             </div>
           </div>
         </div>
