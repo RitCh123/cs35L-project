@@ -74,6 +74,15 @@ export default function CustomModal({
     }
   }, [preferredGame]);
 
+  // Add effect to handle party size adjustment when available friends change
+  useEffect(() => {
+    const maxAllowedPartySize = preferredGame === "APEX" ? 2 : profiles.length + 1;
+    if (partySize > maxAllowedPartySize) {
+      setPartySize(maxAllowedPartySize);
+      setSelectedFriends([]);
+    }
+  }, [profiles.length, preferredGame]);
+
   // Load profiles when modal opens
   useEffect(() => {
     if (isOpen && currentUser) {
@@ -257,7 +266,14 @@ export default function CustomModal({
                       isRequired
                     >
                       {partySizeOptions
-                        .filter(size => preferredGame !== "APEX" || size.key <= 2)
+                        .filter(size => {
+                          // First check if Apex Legends is selected (max 2 players)
+                          if (preferredGame === "APEX") {
+                            return size.key <= 2;
+                          }
+                          // Then limit by number of available friends + 1 (for the current user)
+                          return size.key <= profiles.length + 1;
+                        })
                         .map((size) => (
                           <SelectItem key={size.key.toString()} value={size.key.toString()}>
                             {size.label}
@@ -267,28 +283,28 @@ export default function CustomModal({
 
                     {partySize > 1 && (
                       <>
-                      <Select
-                        label="Select Friends"
-                        placeholder="Choose friends to invite"
-                        selectedKeys={selectedFriends}
-                        onSelectionChange={(keys) => {
-                            const keyArray = Array.from(keys);
-                            // Limit selection to partySize - 1 (accounting for current user)
-                            if (keyArray.length <= partySize - 1) {
-                              setSelectedFriends(keyArray);
-                            }
-                        }}
-                        className="max-w-base mt-4"
-                        isRequired
-                        selectionMode="multiple"
-                        isDisabled={profiles.length === 0}
-                      >
-                        {profiles.map((profile) => (
-                          <SelectItem key={profile.key} value={profile.key}>
-                            {profile.label}
-                          </SelectItem>
-                        ))}
-                      </Select>
+                        <Select
+                          label="Select Friends"
+                          placeholder={profiles.length === 0 ? "Add friends first!" : "Choose friends to invite"}
+                          selectedKeys={selectedFriends}
+                          onSelectionChange={(keys) => {
+                              const keyArray = Array.from(keys);
+                              // Limit selection to partySize - 1 (accounting for current user)
+                              if (keyArray.length <= partySize - 1) {
+                                setSelectedFriends(keyArray);
+                              }
+                          }}
+                          className="max-w-base mt-4"
+                          isRequired
+                          selectionMode="multiple"
+                          isDisabled={profiles.length === 0}
+                        >
+                          {profiles.map((profile) => (
+                            <SelectItem key={profile.key} value={profile.key}>
+                              {profile.label}
+                            </SelectItem>
+                          ))}
+                        </Select>
                         <p style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '0.25rem' }}>
                           {profiles.length === 0 
                             ? "You need to have accepted friends to create a party. Add friends first!"

@@ -103,7 +103,7 @@ const DisplayTypeStation = ({
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {filteredActiveReservations.length === 0 && (
-                <p style={{ color: '#4b5563' }}>No active {stationType.toLowerCase()} sessions.</p>
+                <p style={{ color: '#4b5563' }}>No active {stationType.toUpperCase()} sessions.</p>
               )}
               {filteredActiveReservations.map((item, index) => (
                 canSeeFullDetails(item) ? (
@@ -256,7 +256,11 @@ const DisplayTypeStation = ({
                         <div>
                           <p style={{ fontWeight: '600' }}>#{index + 1}: {getPlaceholderName(index)}</p>
                           <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-                            Queued at: {new Date(item.createdAt).toLocaleTimeString()}
+                            Queued at: {item.createdAt ? new Date(item.createdAt).toLocaleTimeString(undefined, {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                          }) : "N/A"}
                           </p>
                         </div>
                       </div>
