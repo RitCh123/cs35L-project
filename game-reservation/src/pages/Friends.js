@@ -331,7 +331,7 @@ export default function Friends() {
           </Link>
         </div>
         <div className="flex-1 flex justify-center">
-          <h1 className="text-2xl font-bold">Friends</h1>
+          <h1 className="text-2xl font-bold">Find Friends</h1>
         </div>
         <div className="flex-1 flex items-center justify-end gap-3">
           <Button
@@ -444,11 +444,11 @@ export default function Friends() {
               {/* New Accepted Friends AccordionItem */}
               <AccordionItem
                 key="accepted-friends"
-                aria-label="Accepted Friends"
+                aria-label="Friends List"
                 title={
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-2">
-                      <span>Accepted Friends</span>
+                      <span>Friends List:</span>
                       {acceptedFriends.length > 0 && (
                         <Badge color="success" variant="flat" size="sm">
                           {acceptedFriends.length}
