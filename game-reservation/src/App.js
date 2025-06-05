@@ -33,6 +33,7 @@ import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from 
 
 import axios from "axios";
 
+
 import CustomModal from "./components/CustomModal";
 import FriendModal from "./components/FriendModal"; // Import remains
 import ProfileTable from "./components/ProfileTable"; // Import remains
@@ -51,6 +52,22 @@ function AppContent() {
   const [reservations, setReservations] = useState([]);
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
+  const [alertColor, setAlertColor] = useState("success"); // Changed default to success
+
+  // Functions to show alerts from CustomModal
+  const showAlert = (message, color = "success") => {
+    setAlertMessage(message);
+    setAlertColor(color);
+    setAlertVisible(true);
+  };
+
+  const showErrorAlert = (message) => {
+    showAlert(message, "danger");
+  };
+
+  const showSuccessAlert = (message) => {
+    showAlert(message, "success");
+  };
 
   const fetchReservations = useCallback(() => {
     axios.get("http://localhost:8080/api/view/reservations")
@@ -194,7 +211,10 @@ function AppContent() {
         <CustomModal 
             isOpen={isOpen} 
             onOpenChange={onOpenChange} 
-            onReservationCreated={fetchReservations} 
+            onReservationCreated={fetchReservations}
+            showAlert={showAlert}
+            showErrorAlert={showErrorAlert}
+            showSuccessAlert={showSuccessAlert}
         />
 
         <div style={{ width: '100%', padding: '2rem' }}>
@@ -240,7 +260,20 @@ function AppContent() {
         </div>
 
         {alertVisible && (
-          <Alert color="success" title="Success" onClose={() => setAlertVisible(false)}>
+          <Alert 
+            color={alertColor} 
+            title={alertColor === "success" ? "Success" : "Error"} 
+            onClose={() => setAlertVisible(false)}
+            style={{
+              position: 'fixed',
+              top: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              maxWidth: '400px',
+              width: 'auto',
+              zIndex: 9999
+            }}
+          >
             {alertMessage}
           </Alert>
         )}
@@ -252,3 +285,6 @@ function AppContent() {
 export default function App() {
   return <AppContent />;
 }
+
+
+

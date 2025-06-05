@@ -21,6 +21,9 @@ export default function CustomModal({
   isOpen,
   onOpenChange,
   onReservationCreated,
+  showAlert,
+  showErrorAlert,
+  showSuccessAlert,
   // renderInput prop seems unused, can be reviewed for removal
 }) {
   const { currentUser } = useAuth();
@@ -96,7 +99,7 @@ export default function CustomModal({
   const sendRequest = async (data) => {
     try {
       if (data.email !== currentUser.email || data.name !== currentUser.displayName) {
-        alert("You can only create reservations for yourself.");
+        showErrorAlert("You can only create reservations for yourself.");
         return null;
       }
 
@@ -106,7 +109,7 @@ export default function CustomModal({
       );
       console.log("Reservation response:", response.data);
       if (response.data && response.data.message) {
-        alert(`Reservation Status: ${response.data.message}`);
+        showSuccessAlert(`Reservation Status: ${response.data.message}`);
       }
       return response.data;
     } catch (error) {
@@ -115,14 +118,14 @@ export default function CustomModal({
       if (error.response && error.response.data && error.response.data.message) {
         errorMessage += ` Error: ${error.response.data.message}`;
       }
-      alert(errorMessage);
+      showErrorAlert(errorMessage);
       throw error;
     }
   };
 
   const handleSubmit = async () => {
     if (!currentUser) {
-      alert("Please sign in to make a reservation.");
+      showErrorAlert("Please sign in to make a reservation.");
       return;
     }
 
@@ -158,10 +161,14 @@ export default function CustomModal({
       const result = await sendRequest(reservationData);
       if (result) {
         if (onReservationCreated) onReservationCreated();
-        onOpenChange(false);
+        // Delay closing the modal to allow success alert to be visible
+        setTimeout(() => {
+          onOpenChange(false);
+        }, 2500); // Give time for alert to show (alert auto-hides after 2000ms)
       }
     } catch (error) {
       console.log("Submit failed, modal remains open for correction.");
+      // Modal stays open so user can see error alert and try again
     }
   };
   
