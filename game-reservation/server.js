@@ -895,6 +895,24 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "UP", message: "Server is healthy" });
 });
 
+async function cleanupExpiredReservations(db) {
+  try {
+    const now = new Date();
+    // Find and delete all reservations that have passed their end time
+    const result = await db.collection("reservations").deleteMany({
+      status: "active",
+      endTime: { $lt: now }
+    });
+    
+    if (result.deletedCount > 0) {
+      console.log(`Cleaned up ${result.deletedCount} expired reservations`);
+      // Trigger allocation cycle to fill newly available spots
+      await triggerAllocationCycle(db);
+    }
+  } catch (err) {
+    console.error("Error during reservation cleanup:", err);
+  }
+}
 // Update the queue update endpoint
 app.post('/api/queue/update', async (req, res) => {
   console.log(`[Queue Update] Received request: ${JSON.stringify(req.body)}`);
@@ -1019,6 +1037,11 @@ async function startServer() {
         "Successfully queried the database. No documents found in users collection (this is okay if the collection is new)."
       );
     }
+
+    // Set up periodic cleanup every minute
+    setInterval(() => cleanupExpiredReservations(db), 60000);
+    console.log("Automatic reservation cleanup scheduled");
+
     const PORT = process.env.PORT || 8080;
     app.listen(PORT, () => {
       console.log(`Server with new allocation logic is running on port ${PORT}`);
