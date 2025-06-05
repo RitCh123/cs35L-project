@@ -316,8 +316,13 @@ export default function CustomModal({
                         <Checkbox 
                             isSelected={seatTogether} 
                             onValueChange={setSeatTogether}
+                            isDisabled={preferredGame === "APEX"}
                         />
-                        <span className="ml-2 text-sm">Attempt to seat party together?</span>
+                        <span className="ml-2 text-sm">
+                          {preferredGame === "APEX" ? 
+                            "Seating together not available for Apex Legends" : 
+                            "Attempt to seat party together?"}
+                        </span>
                     </div>
                     <Link href="/pcs" target="_blank" className="text-sm mt-2 text-blue-600 hover:underline">
                         View PC Layout (A-M)
