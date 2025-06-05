@@ -295,10 +295,14 @@ async function connectToDatabase() {
     await reservationsCollection.createIndex({ email: 1 });
     await reservationsCollection.createIndex({ assignedPCs: 1 });
 
-
     await db.createCollection("games");
-    // await db.createCollection("queue"); // Consolidating queue logic into reservations
     await db.createCollection("profiles");
+    
+    // Create friend_requests collection and indexes
+    const friendRequestsCollection = db.collection("friend_requests");
+    await friendRequestsCollection.createIndex({ recipient: 1, status: 1 });
+    await friendRequestsCollection.createIndex({ sender: 1, status: 1 });
+    await friendRequestsCollection.createIndex({ createdAt: 1 });
 
     console.log("Database setup completed");
     return db;
@@ -757,59 +761,225 @@ app.post("/api/update/profile", async (req, res) => {
 app.post('/api/friends/add', async (req, res) => {
   const { requestorEmail, friendProfileId } = req.body;
   console.log(`Friend add request from ${requestorEmail} for profile ID ${friendProfileId}`);
-  // In a full implementation, you would update your database here to establish the friend relationship.
-  // For now, we'll just acknowledge the request.
-  // Example:
-  // const db = client.db(dbName);
-  // await db.collection("users").updateOne({ email: requestorEmail }, { $addToSet: { friends: friendProfileId } });
-  // await db.collection("users").updateOne({ _id: new ObjectId(friendProfileId) }, { $addToSet: { friendOf: requestorEmail } }); // Or similar logic
-  res.status(200).json({ message: 'Friend add request received' });
+  
+  try {
+    const db = client.db(dbName);
+    let recipientEmail;
+
+    // Handle dummy profile case
+    if (friendProfileId === "dummy-nikhil") {
+      recipientEmail = "nikhildewitt@g.ucla.edu";
+    } else {
+      // Get recipient's email from their profile
+      const friendProfile = await db.collection("profiles").findOne({ 
+        _id: new ObjectId(friendProfileId) 
+      });
+      
+      if (!friendProfile) {
+        return res.status(404).json({ message: 'Friend profile not found' });
+      }
+      recipientEmail = friendProfile.email;
+    }
+
+    // Check if a pending request already exists
+    const existingRequest = await db.collection("friend_requests").findOne({
+      sender: requestorEmail,
+      recipient: recipientEmail,
+      status: "pending"
+    });
+
+    if (existingRequest) {
+      return res.status(400).json({ message: 'Friend request already sent' });
+    }
+
+    // Create the friend request in the new collection
+    const friendRequest = {
+      sender: requestorEmail,
+      recipient: recipientEmail,
+      status: "pending",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    const result = await db.collection("friend_requests").insertOne(friendRequest);
+
+    res.status(200).json({ 
+      message: 'Friend request sent successfully',
+      request: { ...friendRequest, _id: result.insertedId }
+    });
+  } catch (error) {
+    console.error('Error processing friend request:', error);
+    res.status(500).json({ 
+      message: 'Error processing friend request',
+      error: error.message 
+    });
+  }
 });
 
-app.post('/api/friends/request', async (req, res) => {
-  const { requestorName, friendProfileId, customMessage } = req.body;
-  let friendEmail;
+// Add new endpoint to get pending friend requests
+app.get('/api/friends/requests', async (req, res) => {
+  const { email } = req.query;
+  
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
 
   try {
     const db = client.db(dbName);
+    const requests = await db.collection("friend_requests")
+      .find({ 
+        recipient: email,
+        status: "pending"
+      })
+      .sort({ createdAt: -1 })
+      .toArray();
 
-    if (friendProfileId === "dummy-nikhil") {
-      friendEmail = "nikhildewitt@g.ucla.edu";
-      if (!friendEmail) {
-          console.error("Dummy profile email is not configured on the server.");
-          return res.status(500).json({ message: 'Dummy friend profile email configuration error on server' });
-      }
-    } else {
-      let mongoObjectId;
-      try {
-        mongoObjectId = new ObjectId(friendProfileId);
-      } catch (bsonError) {
-        console.error('Invalid friendProfileId format for ObjectId:', friendProfileId, bsonError.message);
-        return res.status(400).json({ message: `Invalid friendProfileId format. It must be a 24 character hex string.` });
-      }
-
-      const friendProfile = await db.collection("profiles").findOne({ _id: mongoObjectId });
-
-      if (!friendProfile) {
-        return res.status(404).json({ message: 'Friend profile not found for ID: ' + friendProfileId });
-      }
-      if (!friendProfile.email) {
-        return res.status(400).json({ message: 'Friend profile (' + friendProfileId + ') does not have an email address' });
-      }
-      friendEmail = friendProfile.email;
-    }
-
-    const subject = 'New Friend Request';
-    let text = `${requestorName} has added you as a friend on Eclipse Gaming!`;
-    if (customMessage && customMessage.trim() !== "") {
-      text += `\n\nThey sent you a message:\n${customMessage.trim()}`;
-    }
-
-    await sendEmail(friendEmail, subject, text);
-    res.status(200).json({ message: 'Friend request email process initiated' });
+    res.status(200).json(requests);
   } catch (error) {
-    console.error('Error processing friend request email:', error);
-    res.status(500).json({ message: 'Error processing friend request email. Details: ' + error.message });
+    console.error('Error fetching friend requests:', error);
+    res.status(500).json({ 
+      message: 'Error fetching friend requests',
+      error: error.message 
+    });
+  }
+});
+
+// Temporary endpoint to insert dummy friend request
+app.post('/api/friends/dummy', async (req, res) => {
+  try {
+    const db = client.db(dbName);
+    
+    // Create a dummy friend request
+    const dummyRequest = {
+      sender: "test.user@ucla.edu",
+      recipient: "nikhildewitt@g.ucla.edu",
+      status: "pending",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    // Check if this exact request already exists
+    const existingRequest = await db.collection("friend_requests").findOne({
+      sender: dummyRequest.sender,
+      recipient: dummyRequest.recipient,
+      status: "pending"
+    });
+
+    if (existingRequest) {
+      return res.status(200).json({ 
+        message: 'Dummy request already exists',
+        request: existingRequest
+      });
+    }
+
+    // Insert the dummy request
+    const result = await db.collection("friend_requests").insertOne(dummyRequest);
+    
+    res.status(201).json({ 
+      message: 'Dummy friend request created',
+      request: { ...dummyRequest, _id: result.insertedId }
+    });
+  } catch (error) {
+    console.error('Error creating dummy friend request:', error);
+    res.status(500).json({ 
+      message: 'Error creating dummy friend request',
+      error: error.message 
+    });
+  }
+});
+
+// Add endpoints for accepting/rejecting friend requests
+app.post('/api/friends/accept/:requestId', async (req, res) => {
+  try {
+    const db = client.db(dbName);
+    const { requestId } = req.params;
+    const { userEmail } = req.body; // To verify the user is the recipient
+
+    if (!ObjectId.isValid(requestId)) {
+      return res.status(400).json({ message: 'Invalid request ID format' });
+    }
+
+    // Find and update the request
+    const request = await db.collection("friend_requests").findOne({
+      _id: new ObjectId(requestId),
+      recipient: userEmail,
+      status: "pending"
+    });
+
+    if (!request) {
+      return res.status(404).json({ message: 'Friend request not found or already processed' });
+    }
+
+    // Update the request status
+    await db.collection("friend_requests").updateOne(
+      { _id: new ObjectId(requestId) },
+      { 
+        $set: { 
+          status: "accepted",
+          updatedAt: new Date()
+        }
+      }
+    );
+
+    // Send email notification
+    const subject = 'Friend Request Accepted';
+    const text = `${userEmail} has accepted your friend request on Eclipse Gaming!`;
+    await sendEmail(request.sender, subject, text);
+
+    res.status(200).json({ message: 'Friend request accepted' });
+  } catch (error) {
+    console.error('Error accepting friend request:', error);
+    res.status(500).json({ 
+      message: 'Error accepting friend request',
+      error: error.message 
+    });
+  }
+});
+
+app.post('/api/friends/reject/:requestId', async (req, res) => {
+  try {
+    const db = client.db(dbName);
+    const { requestId } = req.params;
+    const { userEmail } = req.body; // To verify the user is the recipient
+
+    if (!ObjectId.isValid(requestId)) {
+      return res.status(400).json({ message: 'Invalid request ID format' });
+    }
+
+    // Find and update the request
+    const request = await db.collection("friend_requests").findOne({
+      _id: new ObjectId(requestId),
+      recipient: userEmail,
+      status: "pending"
+    });
+
+    if (!request) {
+      return res.status(404).json({ message: 'Friend request not found or already processed' });
+    }
+
+    // Update the request status
+    await db.collection("friend_requests").updateOne(
+      { _id: new ObjectId(requestId) },
+      { 
+        $set: { 
+          status: "rejected",
+          updatedAt: new Date()
+        }
+      }
+    );
+
+    // Send email notification
+    const subject = 'Friend Request Rejected';
+    const text = `${userEmail} has declined your friend request on Eclipse Gaming.`;
+    await sendEmail(request.sender, subject, text);
+
+    res.status(200).json({ message: 'Friend request rejected' });
+  } catch (error) {
+    console.error('Error rejecting friend request:', error);
+    res.status(500).json({ 
+      message: 'Error rejecting friend request',
+      error: error.message 
+    });
   }
 });
 // End Added Friend Request Endpoints
