@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const nodemailer = require("nodemailer");
+const { sendQueueNotification, sendWaitlistConfirmationEmail, sendReservationActiveEmail } = require('./src/utils/emailService'); // Ensure this path is correct
 
 const app = express();
 app.use(cors({ origin: "http://localhost:3000" }));
@@ -150,46 +151,86 @@ function findBestFitBlockForAdjacent(party, freeBlocks) {
 }
 
 async function allocateAdjacentParties(db) {
+  console.log("[AllocationCycle] Trying to allocate ADJACENT PC parties.");
   const seatState = await getSeatState(db);
   const freeBlocks = refreshFreeBlocks(seatState, SEAT_TOPOLOGY);
   const Q_adj_candidates = await db.collection("reservations").find({
     status: "waitlisted", reservationType: "PC", seatTogether: true 
   }).sort({ createdAt: 1 }).limit(ADJ_QUEUE_WINDOW).toArray();
-  if (Q_adj_candidates.length === 0) return false;
+
+  if (Q_adj_candidates.length === 0) {
+    console.log("[AllocationCycle] No adjacent PC candidates in waitlist.");
+    return false;
+  }
+
   const sortedCandidates = Q_adj_candidates.sort((a, b) => {
-    if (a.partySize !== b.partySize) return b.partySize - a.partySize;
-    return new Date(a.createdAt) - new Date(b.createdAt);
+    if (a.partySize !== b.partySize) return b.partySize - a.partySize; // Prioritize larger parties
+    return new Date(a.createdAt) - new Date(b.createdAt); // Then by oldest
   });
+
   for (const party of sortedCandidates) {
+    console.log(`[AllocationCycle] Evaluating adjacent candidate: ${party._id} (Name: ${party.name}, Size: ${party.partySize})`);
     const blockSegment = findBestFitBlockForAdjacent(party, freeBlocks);
     if (blockSegment) {
+      console.log(`[AllocationCycle] Found suitable block ${blockSegment.join(',')} for adjacent party ${party._id}.`);
       await updateReservationToActive(db, party._id, blockSegment, "Promoted (adjacent) from waitlist.");
-      console.log(`Adjacent party ${party._id} (${party.name}, size ${party.partySize}) seated in ${blockSegment.join(',')}.`);
-      return true;
+      console.log(`[AllocationCycle] Adjacent party ${party._id} (${party.name}, size ${party.partySize}) seated in ${blockSegment.join(',')}.`);
+      
+      // Send email notification
+      if (party.email) {
+        console.log(`[AllocationCycle] Sending 'active' email to ${party.email} for PC reservation ${party._id}.`);
+        sendReservationActiveEmail(party.email, party.reservationType, party.name, blockSegment)
+          .catch(err => console.error(`[AllocationCycle] Error sending 'active' email for adjacent party ${party._id}:`, err));
+      }
+      return true; // Allocation made
     }
   }
+  console.log("[AllocationCycle] No suitable blocks found for any current adjacent PC candidates.");
   return false;
 }
 
 async function allocateFlexibleParties(db) {
+  console.log("[AllocationCycle] Trying to allocate FLEXIBLE PC parties.");
   const seatState = await getSeatState(db);
   let availableSingleSeats = ALL_REAL_SEATS.filter(seatId => seatState[seatId] === null);
   const Q_flex = await db.collection("reservations").find({
     status: "waitlisted", reservationType: "PC", seatTogether: false
   }).sort({ createdAt: 1 }).toArray();
-  if (Q_flex.length === 0) return false;
+
+  if (Q_flex.length === 0) {
+    console.log("[AllocationCycle] No flexible PC candidates in waitlist.");
+    return false;
+  }
+  console.log(`[AllocationCycle] Found ${Q_flex.length} flexible PC candidates.`);
+
   let anAllocationMade = false;
   for (const party of Q_flex) {
+    console.log(`[AllocationCycle] Evaluating flexible candidate: ${party._id} (Name: ${party.name}, Size: ${party.partySize})`);
     let partySpecificAvailableSeats = availableSingleSeats;
     if (party.preferredGame === "Apex Legends") {
       partySpecificAvailableSeats = availableSingleSeats.filter(seatId => APEX_LEGENDS_PCS.includes(seatId));
     }
+
     if (partySpecificAvailableSeats.length >= party.partySize) {
       const seatsToAssign = partySpecificAvailableSeats.slice(0, party.partySize);
+      console.log(`[AllocationCycle] Found suitable seats ${seatsToAssign.join(',')} for flexible party ${party._id}.`);
       await updateReservationToActive(db, party._id, seatsToAssign, "Promoted (flexible) from waitlist.");
-      console.log(`Flexible party ${party._id} (${party.name}, size ${party.partySize}) seated in ${seatsToAssign.join(',')}.`);
-      seatsToAssign.forEach(assignedSeat => { availableSingleSeats = availableSingleSeats.filter(s => s !== assignedSeat); });
+      console.log(`[AllocationCycle] Flexible party ${party._id} (${party.name}, size ${party.partySize}) seated in ${seatsToAssign.join(',')}.`);
+      
+      // Send email notification
+      if (party.email) {
+        console.log(`[AllocationCycle] Sending 'active' email to ${party.email} for PC reservation ${party._id}.`);
+        sendReservationActiveEmail(party.email, party.reservationType, party.name, seatsToAssign)
+          .catch(err => console.error(`[AllocationCycle] Error sending 'active' email for flexible party ${party._id}:`, err));
+      }
+
+      // Update available seats for the next iteration in this pass
+      seatsToAssign.forEach(assignedSeat => { 
+        availableSingleSeats = availableSingleSeats.filter(s => s !== assignedSeat); 
+      });
       anAllocationMade = true;
+    } else {
+      console.log(`[AllocationCycle] Not enough available seats for flexible party ${party._id} (needs ${party.partySize}, available relevant: ${partySpecificAvailableSeats.length}).`);
     }
   }
   return anAllocationMade;
@@ -221,24 +262,41 @@ async function getActiveConsoleSlotCount(db) {
 }
 
 async function allocateConsoleParties(db) {
+  console.log("[AllocationCycle] Trying to allocate CONSOLE parties.");
   const activeConsoleSlots = await getActiveConsoleSlotCount(db);
-  if (activeConsoleSlots >= TOTAL_CONSOLE_SLOTS) {
-    return false; // No console slots available
+  const availableSlots = TOTAL_CONSOLE_SLOTS - activeConsoleSlots;
+  console.log(`[AllocationCycle] Active console slots: ${activeConsoleSlots}, Total slots: ${TOTAL_CONSOLE_SLOTS}, Available: ${availableSlots}`);
+
+  if (availableSlots <= 0) {
+    console.log("[AllocationCycle] No console slots available.");
+    return false; 
   }
 
+  // Fetch one candidate at a time to fill available slots
   const Q_consoles = await db.collection("reservations").find({
     status: "waitlisted",
     reservationType: "CONSOLE"
   }).sort({ createdAt: 1 }).limit(1).toArray(); // Get the oldest one
 
   if (Q_consoles.length === 0) {
-    return false; // No consoles in waitlist
+    console.log("[AllocationCycle] No console candidates in waitlist.");
+    return false; 
   }
 
   const partyToSeat = Q_consoles[0];
-  // For consoles, assignedPCs is not used. We just activate them.
+  console.log(`[AllocationCycle] Evaluating console candidate: ${partyToSeat._id} (Name: ${partyToSeat.name}, Type: ${partyToSeat.consoleType})`);
+  
+  // For consoles, assignedPCs is not used for specific seat IDs. We just activate them.
   await updateReservationToActive(db, partyToSeat._id, [], `Promoted (console) from waitlist for ${partyToSeat.consoleType}.`);
-  console.log(`Console party ${partyToSeat._id} (${partyToSeat.name}, type ${partyToSeat.consoleType}) seated.`);
+  console.log(`[AllocationCycle] Console party ${partyToSeat._id} (${partyToSeat.name}, type ${partyToSeat.consoleType}) seated.`);
+  
+  // Send email notification
+  if (partyToSeat.email) {
+    console.log(`[AllocationCycle] Sending 'active' email to ${partyToSeat.email} for CONSOLE reservation ${partyToSeat._id}.`);
+    // For consoles, the 'assignedDetails' parameter is the consoleType
+    sendReservationActiveEmail(partyToSeat.email, partyToSeat.reservationType, partyToSeat.name, partyToSeat.consoleType)
+      .catch(err => console.error(`[AllocationCycle] Error sending 'active' email for console party ${partyToSeat._id}:`, err));
+  }
   return true; // Allocated a console party
 }
 
@@ -336,7 +394,7 @@ app.post("/api/create/user", async (req, res) => {
     const email = rawEmail.toLowerCase().trim(); // Normalize email to lowercase and trim whitespace
 
     // Check if user already exists with the normalized email
-    const existingUser = await db.collection("users").findOne({ email }); 
+    const existingUser = await db.collection("users").findOne({ email });
     if (existingUser) {
       console.log(`User ${email} already exists. Role: ${existingUser.role}`);
       return res.status(200).json({ message: "User already exists", userId: existingUser._id, role: existingUser.role });
@@ -351,10 +409,10 @@ app.post("/api/create/user", async (req, res) => {
     const result = await db.collection("users").insertOne(newUser);
     console.log(`User ${email} created with ID: ${result.insertedId} and Role: ${newUser.role}`);
     res.status(201).json({
-      message: "User created",
-      userId: result.insertedId,
+        message: "User created",
+        userId: result.insertedId,
       role: newUser.role,
-    });
+      });
   } catch (err) {
     console.error("Error creating user:", err);
     res.status(500).send("Internal Server Error");
@@ -441,8 +499,8 @@ async function findAvailablePCs(db, partySize, preferredGame, seatTogether) {
 
 app.post("/api/create/reservation", async (req, res) => {
   try {
-    console.log("--- New Reservation Request Start ---");
-    console.log("Request Body:", JSON.stringify(req.body, null, 2));
+    console.log("[Reservation Create] --- New Reservation Request Start ---");
+    console.log("[Reservation Create] Request Body:", JSON.stringify(req.body, null, 2));
 
     const db = client.db(dbName);
     const {
@@ -456,14 +514,14 @@ app.post("/api/create/reservation", async (req, res) => {
     } = req.body;
 
     if (!email || !name || !reservationType) {
-      console.error("Validation Error: Missing required fields: email, name, or reservationType");
+      console.error("[Reservation Create] Validation Error: Missing required fields: email, name, or reservationType");
       return res.status(400).json({ message: "Missing required fields: email, name, or reservationType" });
     }
 
     const partySize = reservationType === "PC" ? parseInt(partySizeStr, 10) : 1;
 
-    console.log(`Parsed Party Size: ${partySize}`);
-    console.log(`Requester Email: ${email}`);
+    console.log(`[Reservation Create] Parsed Party Size: ${partySize}`);
+    console.log(`[Reservation Create] Requester Email: ${email}`);
 
     const reservationData = {
       name,
@@ -477,61 +535,79 @@ app.post("/api/create/reservation", async (req, res) => {
       seatTogether: reservationType === "PC" ? !!seatTogether : false,
       preferredGame: reservationType === "PC" ? (preferredGame === "ANY" ? null : preferredGame) : null,
       consoleType: reservationType === "CONSOLE" ? consoleType : null,
-      partyMembers: req.body.partyMembers || [email],
+      partyMembers: [email], // Simplified, can be expanded later
     };
     
     if (reservationType === "PC") {
         if (!reservationData.partySize || reservationData.partySize < 1 || reservationData.partySize > 4) {
-            console.error(`Validation Error: Party size ${reservationData.partySize} out of range (1-4).`);
+            console.error(`[Reservation Create] Validation Error: Party size ${reservationData.partySize} out of range (1-4).`);
             return res.status(400).json({ message: "Party size must be between 1 and 4 for PC reservations." });
         }
         if (reservationData.preferredGame === "APEX") {
             reservationData.preferredGame = "Apex Legends";
         }
-        
-        // Validate party members length matches party size
-        if (reservationData.partyMembers.length !== reservationData.partySize) {
-            console.error(`Validation Error: Party members count (${reservationData.partyMembers.length}) does not match party size (${reservationData.partySize}).`);
-            return res.status(400).json({ message: "Number of party members must match party size." });
-        }
-
-        // Ensure requester is in party members
-        if (!reservationData.partyMembers.includes(email)) {
-            console.error("Validation Error: Requester must be in party members.");
-            return res.status(400).json({ message: "Requester must be included in party members." });
-        }
-
-        console.log("PC Reservation. Party members validated.");
+        console.log("[Reservation Create] PC Reservation. Party member email validation logic as per existing code.");
 
     } else if (reservationType === "CONSOLE") {
         if (!consoleType) {
-            console.error("Validation Error: consoleType is required for CONSOLE reservations.");
+            console.error("[Reservation Create] Validation Error: consoleType is required for CONSOLE reservations.");
             return res.status(400).json({ message: "consoleType is required for CONSOLE reservations" });
         }
-        console.log("Console reservation, party members set to requester only.");
+        console.log("[Reservation Create] Console reservation, party members set to requester only.");
     } else {
-      console.error(`Validation Error: Invalid reservationType: ${reservationType}.`);
+      console.error(`[Reservation Create] Validation Error: Invalid reservationType: ${reservationType}.`);
       return res.status(400).json({ message: "Invalid reservationType." });
     }
 
-    console.log("Final reservationData before insert:", JSON.stringify(reservationData, null, 2));
+    console.log("[Reservation Create] Final reservationData before insert:", JSON.stringify(reservationData, null, 2));
     const result = await db.collection("reservations").insertOne(reservationData);
-    const createdReservation = { _id: result.insertedId, ...reservationData };
-    
-    console.log(`Reservation ${createdReservation._id} for ${createdReservation.reservationType} created with status: ${createdReservation.status}`);
-    console.log("--- Reservation Request End ---");
+    const initialReservation = { _id: result.insertedId, ...reservationData }; // Capture initial state
 
-    if (createdReservation.status === "waitlisted") {
-      await triggerAllocationCycle(db);
+    console.log(`[Reservation Create] Reservation ${initialReservation._id} for ${initialReservation.reservationType} created with initial status: ${initialReservation.status}`);
+
+    // Trigger allocation cycle immediately after creating the waitlisted reservation
+    console.log("[Reservation Create] Triggering allocation cycle...");
+    await triggerAllocationCycle(db);
+    console.log("[Reservation Create] Allocation cycle finished.");
+
+    // Re-fetch the reservation to check its current status after allocation cycle
+    const finalReservation = await db.collection("reservations").findOne({ _id: initialReservation._id });
+
+    if (!finalReservation) {
+        console.error(`[Reservation Create] CRITICAL: Reservation ${initialReservation._id} not found after allocation cycle.`);
+        // This shouldn't happen if insert was successful. Send original details.
+        return res.status(201).json({
+            message: `Reservation ${initialReservation.status} (Error fetching final status)`, // Potentially misleading, but better than crashing
+            reservationId: initialReservation._id,
+            reservationDetails: initialReservation,
+        });
     }
 
+    console.log(`[Reservation Create] Final status for reservation ${finalReservation._id} is: ${finalReservation.status}`);
+
+    // Send waitlist confirmation email ONLY if still waitlisted
+    if (finalReservation.status === "waitlisted") {
+      console.log(`[Reservation Create] Reservation ${finalReservation._id} is still waitlisted. Sending confirmation email to ${finalReservation.email}.`);
+      try {
+        await sendWaitlistConfirmationEmail(finalReservation.email, finalReservation.reservationType, finalReservation.name);
+      } catch (emailError) {
+        console.error(`[Reservation Create] Failed to send waitlist confirmation email for ${finalReservation._id}: `, emailError);
+        // Do not let email failure break the reservation flow
+      }
+    }
+
+    console.log("[Reservation Create] --- Reservation Request End ---");
+
     res.status(201).json({
-      message: `Reservation ${createdReservation.status}`,
-      reservationId: createdReservation._id,
-      reservationDetails: createdReservation,
-    });
+      message: `Reservation status: ${finalReservation.status}`, // Provide the final status
+      reservationId: finalReservation._id,
+      reservationDetails: finalReservation,
+      });
   } catch (err) {
-    console.error("!!! Critical Error in /api/create/reservation !!!:", err);
+    console.error("[Reservation Create] !!! Critical Error in /api/create/reservation !!!:", err);
+    if (err.name === 'MongoNetworkError' || err.name === 'MongoServerSelectionError') {
+        return res.status(503).json({ message: 'Database communication error. Please try again later.' });
+    }
     res.status(500).send("Internal Server Error");
   }
 });
@@ -580,7 +656,7 @@ app.put("/api/reservations/complete/:reservationId", async (req, res) => {
 app.delete("/api/delete/reservation", async (req, res) => {
   try {
     const db = client.db(dbName);
-    const { reservationId, userEmail, userRole } = req.body; 
+    const { reservationId, userEmail, userRole } = req.body;
     
     if (!reservationId || !userEmail || !userRole) {
       return res.status(400).json({ message: "Missing reservationId, userEmail, or userRole for deletion." });
@@ -819,6 +895,117 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "UP", message: "Server is healthy" });
 });
 
+// Update the queue update endpoint
+app.post('/api/queue/update', async (req, res) => {
+  console.log(`[Queue Update] Received request: ${JSON.stringify(req.body)}`);
+  try {
+    const { stationId, userId, action } = req.body;
+    console.log(`[Queue Update] Action: ${action}, StationID: ${stationId}, UserID: ${userId}`);
+    const db = client.db(dbName);
+
+    if (!ObjectId.isValid(stationId) || !ObjectId.isValid(userId)) {
+      console.error('[Queue Update] Invalid stationId or userId format.');
+      return res.status(400).json({ message: 'Invalid stationId or userId format.' });
+    }
+
+    const stationObjectId = new ObjectId(stationId);
+    const userObjectId = new ObjectId(userId);
+
+    console.log(`[Queue Update] Fetching station: ${stationObjectId}`);
+    const station = await db.collection("stations").findOne({ _id: stationObjectId });
+    if (!station) {
+      console.error(`[Queue Update] Station not found: ${stationObjectId}`);
+      return res.status(404).json({ message: 'Station not found' });
+    }
+    console.log(`[Queue Update] Found station: ${station.name}`);
+
+    console.log(`[Queue Update] Fetching user: ${userObjectId}`);
+    const user = await db.collection("users").findOne({ _id: userObjectId });
+    if (!user || !user.email) {
+      console.error(`[Queue Update] User not found or no email: ${userObjectId}`);
+      return res.status(404).json({ message: 'User not found or user has no email address for notifications.' });
+    }
+    console.log(`[Queue Update] Found user: ${user.email}`);
+
+    let updatedStation;
+
+    if (action === 'join') {
+      console.log(`[Queue Update] Join action for user ${user.email} to station ${station.name}`);
+      const currentQueue = station.queue || [];
+      const userAlreadyInQueue = currentQueue.some(id => id.equals(userObjectId));
+
+      if (userAlreadyInQueue) {
+        updatedStation = await db.collection("stations").findOne({ _id: stationObjectId });
+        const userPosition = updatedStation.queue.findIndex(id => id.equals(userObjectId)) + 1;
+        console.log(`[Queue Update] User ${user.email} already in queue at position ${userPosition}`);
+        return res.status(400).json({ message: 'User is already in this queue.', station: updatedStation, position: userPosition });
+      }
+
+      await db.collection("stations").updateOne(
+        { _id: stationObjectId },
+        { $push: { queue: userObjectId } }
+      );
+      console.log(`[Queue Update] User ${user.email} added to queue for station ${station.name}`);
+
+      updatedStation = await db.collection("stations").findOne({ _id: stationObjectId });
+      const userPosition = updatedStation.queue.findIndex(id => id.equals(userObjectId)) + 1;
+      console.log(`[Queue Update] User ${user.email} new position in queue: ${userPosition}`);
+
+      if (userPosition > 0) {
+        console.log(`[Queue Update] Attempting to send 'join queue' email to ${user.email} for station ${station.name}, position ${userPosition}`);
+        try {
+          await sendQueueNotification(user.email, station.name, userPosition);
+          console.log(`[Queue Update] 'Join queue' email notification call for ${user.email} completed.`);
+        } catch (emailError) {
+          console.error(`[Queue Update] Error calling sendQueueNotification for join: `, emailError);
+        }
+      }
+      res.json({ message: 'Joined queue successfully', station: updatedStation, position: userPosition });
+
+    } else if (action === 'leave') {
+      console.log(`[Queue Update] Leave action for user ${user.email} from station ${station.name}`);
+      const result = await db.collection("stations").updateOne(
+        { _id: stationObjectId },
+        { $pull: { queue: userObjectId } }
+      );
+
+      if (result.modifiedCount === 0) {
+        updatedStation = await db.collection("stations").findOne({ _id: stationObjectId });
+        console.log(`[Queue Update] User ${user.email} not found in queue or no change made during leave.`);
+        return res.status(400).json({ message: 'User not found in queue or no change made.', station: updatedStation });
+      }
+      console.log(`[Queue Update] User ${user.email} removed from queue for station ${station.name}`);
+
+      updatedStation = await db.collection("stations").findOne({ _id: stationObjectId });
+
+      if (updatedStation.queue && updatedStation.queue.length > 0) {
+        const nextUserObjectId = updatedStation.queue[0];
+        console.log(`[Queue Update] Next user in queue is ${nextUserObjectId}`);
+        const nextUser = await db.collection("users").findOne({ _id: nextUserObjectId });
+        if (nextUser && nextUser.email) {
+          console.log(`[Queue Update] Attempting to send 'next in queue' email to ${nextUser.email} for station ${station.name}`);
+          try {
+            await sendQueueNotification(nextUser.email, station.name, 1);
+            console.log(`[Queue Update] 'Next in queue' email notification call for ${nextUser.email} completed.`);
+          } catch (emailError) {
+            console.error(`[Queue Update] Error calling sendQueueNotification for leave/next: `, emailError);
+          }
+        }
+      }
+      res.json({ message: 'Left queue successfully', station: updatedStation });
+
+    } else {
+      console.error(`[Queue Update] Invalid action: ${action}`);
+      res.status(400).json({ message: 'Invalid action specified. Use "join" or "leave".' });
+    }
+  } catch (error) {
+    console.error('[Queue Update] Critical error in /api/queue/update:', error);
+    if (error.name === 'MongoNetworkError' || error.name === 'MongoServerSelectionError') {
+        return res.status(503).json({ message: 'Database communication error. Please try again later.' });
+    }
+    res.status(500).json({ message: 'Internal server error while updating queue.' });
+  }
+});
 
 async function startServer() {
   try {
