@@ -45,7 +45,7 @@ export default function Friends() {
       if (!currentUser) {
         setProfiles([]);
         setFilteredProfiles([]);
-        setOpenToFriends(false); 
+        setOpenToFriends(false);
         return;
       }
       try {
@@ -60,7 +60,7 @@ export default function Friends() {
         if (currentUserProfile) {
           setOpenToFriends(!!currentUserProfile.openToFriends);
         } else {
-          setOpenToFriends(false); 
+          setOpenToFriends(false);
         }
       } catch (err) {
         console.error("Error fetching initial data:", err);
@@ -310,6 +310,8 @@ export default function Friends() {
     const profile = profiles.find(p => p._id === profileId);
     if (!profile) return 'none';
     
+    // Check if they are already friends
+    if (acceptedFriends.some(friend => friend.email === profile.email)) return 'friends';
     // Check if they sent you a request
     if (pendingRequests.some(req => req.sender === profile.email)) return 'received';
     // Check if you sent them a request
@@ -352,7 +354,7 @@ export default function Friends() {
             variant="solid"
             onPress={onOpenProfile}
           >
-            Update Profile
+            Profile
           </Button>
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium">Open to Friends</span>
@@ -622,6 +624,18 @@ export default function Friends() {
                   <TableCell>
                     {(() => {
                       const status = getRequestStatus(profile._id);
+                      if (status === 'friends') {
+                        return (
+                          <Button
+                            color="success"
+                            variant="flat"
+                            isDisabled
+                            startContent={<CheckIcon />}
+                          >
+                            Friends
+                          </Button>
+                        );
+                      }
                       if (status === 'sent') {
                         return (
                           <Button
