@@ -29,6 +29,7 @@ export default function Friends() {
 
   // Add new state for pending requests
   const [pendingRequests, setPendingRequests] = useState([]);
+  const [sentRequests, setSentRequests] = useState([]);
   const [isLoadingRequests, setIsLoadingRequests] = useState(false);
 
   // Add new state for accepted friends
@@ -302,6 +303,32 @@ export default function Friends() {
     } finally {
       setIsLoadingFriends(false);
     }
+  };
+
+  // Add this effect after the pendingRequests effect
+  useEffect(() => {
+    const fetchSentRequests = async () => {
+      if (!currentUser) return;
+      try {
+        const response = await axios.get(`http://localhost:8080/api/friends/sent?email=${currentUser.email}`);
+        setSentRequests(response.data);
+      } catch (err) {
+        console.error("Error fetching sent friend requests:", err);
+      }
+    };
+    fetchSentRequests();
+  }, [currentUser]);
+
+  // Add this helper function before the return statement
+  const getRequestStatus = (profileId) => {
+    const profile = profiles.find(p => p._id === profileId);
+    if (!profile) return 'none';
+    
+    // Check if they sent you a request
+    if (pendingRequests.some(req => req.sender === profile.email)) return 'received';
+    // Check if you sent them a request
+    if (sentRequests.some(req => req.recipient === profile.email)) return 'sent';
+    return 'none';
   };
 
   return (
@@ -607,25 +634,42 @@ export default function Friends() {
                     </Chip>
                   </TableCell>
                   <TableCell>
-                    {sentEmails.has(profile._id) ? (
-                      <Button
-                        color="default"
-                        variant="flat"
-                        isDisabled
-                        startContent={<CheckIcon />}
-                      >
-                        Request Sent
-                      </Button>
-                    ) : (
-                      <Button
-                        color="primary"
-                        variant="solid"
-                        onPress={() => openMessageModal(profile._id)}
-                        startContent={<AddFriendIcon />}
-                      >
-                        Friend
-                      </Button>
-                    )}
+                    {(() => {
+                      const status = getRequestStatus(profile._id);
+                      if (status === 'sent') {
+                        return (
+                          <Button
+                            color="default"
+                            variant="flat"
+                            isDisabled
+                            startContent={<CheckIcon />}
+                          >
+                            Request Sent
+                          </Button>
+                        );
+                      }
+                      if (status === 'received') {
+                        return (
+                          <Button
+                            color="warning"
+                            variant="flat"
+                            onPress={() => handleAcceptRequest(pendingRequests.find(req => req.senderProfileId === profile._id)?._id)}
+                          >
+                            Respond to Request
+                          </Button>
+                        );
+                      }
+                      return (
+                        <Button
+                          color="primary"
+                          variant="solid"
+                          onPress={() => openMessageModal(profile._id)}
+                          startContent={<AddFriendIcon />}
+                        >
+                          Friend
+                        </Button>
+                      );
+                    })()}
                   </TableCell>
                 </TableRow>
               ))}

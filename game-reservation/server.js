@@ -1173,6 +1173,52 @@ app.get('/api/friends/accepted', async (req, res) => {
   }
 });
 
+// Add endpoint to get sent friend requests
+app.get('/api/friends/sent', async (req, res) => {
+  const { email } = req.query;
+  
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+
+  try {
+    const db = client.db(dbName);
+    const requests = await db.collection("friend_requests")
+      .find({ 
+        sender: email,
+        status: "pending"
+      })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    // Get profile information for each recipient
+    const recipientEmails = requests.map(req => req.recipient);
+    const profiles = await db.collection("profiles")
+      .find({ email: { $in: recipientEmails } })
+      .toArray();
+
+    // Create a map of email to profile for easy lookup
+    const profileMap = profiles.reduce((map, profile) => {
+      map[profile.email] = profile;
+      return map;
+    }, {});
+
+    // Add profile information to each request
+    const requestsWithProfiles = requests.map(request => ({
+      ...request,
+      recipientProfile: profileMap[request.recipient] || null
+    }));
+
+    res.status(200).json(requestsWithProfiles);
+  } catch (error) {
+    console.error('Error fetching sent friend requests:', error);
+    res.status(500).json({ 
+      message: 'Error fetching sent friend requests',
+      error: error.message 
+    });
+  }
+});
+
 // Health check endpoint
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "UP", message: "Server is healthy" });
