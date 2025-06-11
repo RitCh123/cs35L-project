@@ -38,8 +38,29 @@ export default function CheckInTimer({
     calculateTimeLeft();
     const timer = setInterval(calculateTimeLeft, 1000);
 
-    return () => clearInterval(timer);
-  }, [deadline, isOpen, onTimeout]);
+    // Check if the user has been checked in
+    const checkCheckinStatus = async () => {
+      try {
+        const response = await fetch(`/api/reservations/${reservationId}`);
+        const data = await response.json();
+        if (!data.needsCheckIn) {
+          // User has been checked in, close the timer
+          onClose();
+          clearInterval(timer);
+        }
+      } catch (error) {
+        console.error('Error checking check-in status:', error);
+      }
+    };
+
+    // Check check-in status every 5 seconds
+    const statusChecker = setInterval(checkCheckinStatus, 5000);
+
+    return () => {
+      clearInterval(timer);
+      clearInterval(statusChecker);
+    };
+  }, [deadline, isOpen, onTimeout, onClose, reservationId]);
 
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);

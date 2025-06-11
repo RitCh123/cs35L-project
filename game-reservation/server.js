@@ -1356,6 +1356,29 @@ app.post("/api/reservations/check-in/:reservationId", async (req, res) => {
   }
 });
 
+// Add endpoint to get a single reservation's details
+app.get("/api/reservations/:reservationId", async (req, res) => {
+  try {
+    const db = client.db(dbName);
+    const { reservationId } = req.params;
+
+    if (!ObjectId.isValid(reservationId)) {
+      return res.status(400).json({ message: "Invalid reservation ID format." });
+    }
+
+    const reservation = await db.collection("reservations").findOne({ _id: new ObjectId(reservationId) });
+    
+    if (!reservation) {
+      return res.status(404).json({ message: "Reservation not found." });
+    }
+
+    res.json(reservation);
+  } catch (err) {
+    console.error("Error fetching reservation:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
 // Schedule cleanup tasks
 setInterval(async () => {
   const db = client.db(dbName);

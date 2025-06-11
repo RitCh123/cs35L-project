@@ -52,7 +52,7 @@ const DisplayTypeStation = ({
   const [showTimer, setShowTimer] = useState(false);
   const [currentTimerReservation, setCurrentTimerReservation] = useState(null);
 
-  // Function to check if user can see full reservation details
+  // Function to check if user can see full details
   const canSeeFullDetails = (reservation) => {
     return userRole === 'ADMIN' || (currentUser && currentUser.email === reservation.email);
   };
@@ -112,7 +112,7 @@ const DisplayTypeStation = ({
       setCurrentTimerReservation(userActiveReservation);
       setShowTimer(true);
     }
-  }, [filteredActiveReservations, currentUser, userRole]); // Add userRole to dependencies
+  }, [filteredActiveReservations, currentUser, userRole]);
 
   return (
     <>
@@ -166,14 +166,33 @@ const DisplayTypeStation = ({
                             <p style={{ fontWeight: '600' }}>{item.name}</p>
                             <div style={{ display: 'flex', gap: '0.75rem' }}>
                               {userRole === 'ADMIN' && (
-                                <Button
-                                  size="md"
-                                  color="success"
-                                  variant="ghost"
-                                  onPress={() => onComplete(item._id)}
-                                >
-                                  Complete
-                                </Button>
+                                <>
+                                  {item.needsCheckIn ? (
+                                    <Button 
+                                      size="md"
+                                      color="warning"
+                                      variant="ghost"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleCheckIn(item._id);
+                                      }}
+                                    >
+                                      Check In
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      size="md"
+                                      color="success"
+                                      variant="ghost"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onComplete(item._id);
+                                      }}
+                                    >
+                                      Complete
+                                    </Button>
+                                  )}
+                                </>
                               )}
                               <Button
                                 size="md"

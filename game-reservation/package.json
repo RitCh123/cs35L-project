@@ -41,9 +41,9 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "dev": "concurrently \"npm run server\" \"npm run react-start\"",
     "server": "nodemon server.js",
-    "client": "npm start",
+    "react-start": "react-scripts start",
     "start:prod": "node server.js"
   },
   "proxy": "http://localhost:8080/",
