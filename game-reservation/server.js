@@ -3,6 +3,11 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const nodemailer = require("nodemailer");
+const path = require('path');
+
+// Serve frontend static files (after build)
+app.use(express.static(path.join(__dirname, 'build')));
+
 const { sendQueueNotification, sendWaitlistConfirmationEmail, sendReservationActiveEmail } = require('./src/utils/emailService'); // Ensure this path is correct
 
 const app = express();
