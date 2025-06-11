@@ -38,12 +38,15 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "react-scripts build",
+    "build:backend": "node -e \"console.log('Backend build completed')\"",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "nodemon server.js",
-    "client": "npm start"
+    "client": "npm start",
+    "start:prod": "node server.js"
   },
   "proxy": "https://eclipse-gaming-reservation.vercel.app/",
   "eslintConfig": {
