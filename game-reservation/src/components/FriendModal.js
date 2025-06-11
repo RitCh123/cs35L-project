@@ -51,12 +51,28 @@ export default function FriendModal({ isOpen, onOpenChange, onProfileUpdated }) 
     { key: "Competitive", label: "Competitive" },
   ];
 
+  const timeOptions = [
+    { key: "9:00 AM", label: "9:00 AM" },
+    { key: "10:00 AM", label: "10:00 AM" },
+    { key: "11:00 AM", label: "11:00 AM" },
+    { key: "12:00 PM", label: "12:00 PM" },
+    { key: "1:00 PM", label: "1:00 PM" },
+    { key: "2:00 PM", label: "2:00 PM" },
+    { key: "3:00 PM", label: "3:00 PM" },
+    { key: "4:00 PM", label: "4:00 PM" },
+    { key: "5:00 PM", label: "5:00 PM" },
+    { key: "6:00 PM", label: "6:00 PM" },
+    { key: "7:00 PM", label: "7:00 PM" },
+    { key: "8:00 PM", label: "8:00 PM" },
+    { key: "9:00 PM", label: "9:00 PM" },
+  ];
+
   useEffect(() => {
     if (isOpen && currentUser) {
       setLoading(true);
       setError("");
       axios
-        .get(`http://localhost:8080/api/view/profile?email=${encodeURIComponent(currentUser.email)}`)
+        .get(`/api/view/profile?email=${encodeURIComponent(currentUser.email)}`)
         .then((res) => {
           const profile = res.data;
           setGame(profile.game || "");
@@ -85,7 +101,7 @@ export default function FriendModal({ isOpen, onOpenChange, onProfileUpdated }) 
     setError("");
     setSuccess(false);
     try {
-      await axios.post("http://localhost:8080/api/create/profile", {
+      await axios.post("/api/create/profile", {
         name: currentUser.displayName || currentUser.email,
         email: currentUser.email,
         game,
@@ -110,7 +126,7 @@ export default function FriendModal({ isOpen, onOpenChange, onProfileUpdated }) 
     setError("");
     setSuccess(false);
     try {
-      await axios.post("http://localhost:8080/api/update/profile", {
+      await axios.post("/api/update/profile", {
         email: currentUser.email,
         game,
         mode,
@@ -156,13 +172,19 @@ export default function FriendModal({ isOpen, onOpenChange, onProfileUpdated }) 
               <SelectItem key={opt.key}>{opt.label}</SelectItem>
             ))}
           </Select>
-          <Input
+          <Select
             label="Preferred Time"
-            placeholder="e.g. 3:00 PM"
-            value={time}
-            onChange={e => setTime(e.target.value)}
+            placeholder="Select your preferred time"
+            selectedKeys={time ? [time] : []}
+            onChange={(e) => setTime(e.target.value)}
             className="mb-2"
-          />
+          >
+            {timeOptions.map((timeOpt) => (
+              <SelectItem key={timeOpt.key} value={timeOpt.key}>
+                {timeOpt.label}
+              </SelectItem>
+            ))}
+          </Select>
           <Select
             label="Play Style"
             placeholder="Select your play style"

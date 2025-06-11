@@ -26,7 +26,7 @@ export default function CustomModal({
   showSuccessAlert,
   // renderInput prop seems unused, can be reviewed for removal
 }) {
-  const { currentUser } = useAuth();
+  const { currentUser, userRole } = useAuth();
   
   const reservationTypeOptions = [
     { key: "PC", label: "PC" },
@@ -86,7 +86,7 @@ export default function CustomModal({
   // Load profiles when modal opens
   useEffect(() => {
     if (isOpen && currentUser) {
-      axios.get(`http://localhost:8080/api/friends/accepted?email=${currentUser.email}`)
+      axios.get(`/api/friends/accepted?email=${currentUser.email}`)
         .then((res) => {
           // Map accepted friends to format needed for select
           const friendProfiles = res.data.friends
@@ -120,9 +120,15 @@ export default function CustomModal({
         return null;
       }
 
+      // Add user role to the request data
+      const requestData = {
+        ...data,
+        userRole: userRole
+      };
+
       const response = await axios.post(
-        "http://localhost:8080/api/create/reservation",
-        data
+        "/api/create/reservation",
+        requestData
       );
       console.log("Reservation response:", response.data);
       if (response.data && response.data.message) {

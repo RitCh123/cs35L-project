@@ -49,7 +49,7 @@ export default function Friends() {
         return;
       }
       try {
-        const res = await axios.get("http://localhost:8080/api/view/profiles");
+        const res = await axios.get("/api/view/profiles");
         let allProfiles = res.data.map(p => ({
             ...p, 
             playStyle: p.playStyle || 'Casual' 
@@ -96,7 +96,7 @@ export default function Friends() {
   const refreshProfileListFromServer = async () => {
     if (!currentUser) return;
     try {
-      const res = await axios.get("http://localhost:8080/api/view/profiles");
+      const res = await axios.get("/api/view/profiles");
       let refreshedProfiles = res.data.map(p => ({
           ...p, 
           playStyle: p.playStyle || 'Casual' 
@@ -116,7 +116,7 @@ export default function Friends() {
     setOpenToFriends(newValue);
 
     try {
-      await axios.post("http://localhost:8080/api/update/profile/friends", {
+      await axios.post("/api/update/profile/friends", {
         email: currentUser.email,
         openToFriends: newValue
       });
@@ -140,7 +140,7 @@ export default function Friends() {
     }
     setSendingEmailLoading(true);
     try {
-      const addResponse = await fetch('http://localhost:8080/api/friends/add', {
+      const addResponse = await fetch('/api/friends/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -154,7 +154,7 @@ export default function Friends() {
         throw new Error(errorData.message || 'Failed to add friend');
       }
 
-      const emailResponse = await fetch('http://localhost:8080/api/friends/request', {
+      const emailResponse = await fetch('/api/friends/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -191,7 +191,7 @@ export default function Friends() {
       
       setIsLoadingRequests(true);
       try {
-        const response = await axios.get(`http://localhost:8080/api/friends/requests?email=${currentUser.email}`);
+        const response = await axios.get(`/api/friends/requests?email=${currentUser.email}`);
         setPendingRequests(response.data);
       } catch (err) {
         console.error("Error fetching pending friend requests:", err);
@@ -208,7 +208,7 @@ export default function Friends() {
     if (!currentUser) return;
     setIsLoadingRequests(true);
     try {
-      const response = await axios.get(`http://localhost:8080/api/friends/requests?email=${currentUser.email}`);
+      const response = await axios.get(`/api/friends/requests?email=${currentUser.email}`);
       setPendingRequests(response.data);
     } catch (err) {
       console.error("Error refreshing pending friend requests:", err);
@@ -223,7 +223,7 @@ export default function Friends() {
     
     setProcessingRequest(true);
     try {
-      const response = await axios.post(`http://localhost:8080/api/friends/accept/${requestId}`, {
+      const response = await axios.post(`/api/friends/accept/${requestId}`, {
         userEmail: currentUser.email
       });
       
@@ -243,7 +243,7 @@ export default function Friends() {
     
     setProcessingRequest(true);
     try {
-      const response = await axios.post(`http://localhost:8080/api/friends/reject/${requestId}`, {
+      const response = await axios.post(`/api/friends/reject/${requestId}`, {
         userEmail: currentUser.email
       });
       
@@ -265,7 +265,7 @@ export default function Friends() {
       
       setIsLoadingFriends(true);
       try {
-        const response = await axios.get(`http://localhost:8080/api/friends/accepted?email=${currentUser.email}`);
+        const response = await axios.get(`/api/friends/accepted?email=${currentUser.email}`);
         setAcceptedFriends(response.data.friends);
       } catch (err) {
         console.error("Error fetching accepted friends:", err);
@@ -282,7 +282,7 @@ export default function Friends() {
     if (!currentUser) return;
     setIsLoadingFriends(true);
     try {
-      const response = await axios.get(`http://localhost:8080/api/friends/accepted?email=${currentUser.email}`);
+      const response = await axios.get(`/api/friends/accepted?email=${currentUser.email}`);
       setAcceptedFriends(response.data.friends);
     } catch (err) {
       console.error("Error refreshing accepted friends:", err);
@@ -296,7 +296,7 @@ export default function Friends() {
     const fetchSentRequests = async () => {
       if (!currentUser) return;
       try {
-        const response = await axios.get(`http://localhost:8080/api/friends/sent?email=${currentUser.email}`);
+        const response = await axios.get(`/api/friends/sent?email=${currentUser.email}`);
         setSentRequests(response.data);
       } catch (err) {
         console.error("Error fetching sent friend requests:", err);

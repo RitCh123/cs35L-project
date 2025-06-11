@@ -70,7 +70,7 @@ function AppContent() {
   };
 
   const fetchReservations = useCallback(() => {
-    axios.get("http://localhost:8080/api/view/reservations")
+    axios.get("/api/view/reservations")
       .then((response) => {
         const sortedData = response.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         setReservations(sortedData);
@@ -112,7 +112,7 @@ function AppContent() {
     }
 
     try {
-      await axios.delete("http://localhost:8080/api/delete/reservation", {
+      await axios.delete("/api/delete/reservation", {
         data: {
           reservationId,
           userEmail: currentUser.email,
@@ -139,7 +139,7 @@ function AppContent() {
     }
 
     try {
-      await axios.put(`http://localhost:8080/api/reservations/complete/${reservationId}`, {
+      await axios.put(`/api/reservations/complete/${reservationId}`, {
         userEmail: currentUser.email,
         userRole: userRole,
       });

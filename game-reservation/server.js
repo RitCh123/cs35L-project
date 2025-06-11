@@ -6,7 +6,7 @@ const nodemailer = require("nodemailer");
 const { sendQueueNotification, sendWaitlistConfirmationEmail, sendReservationActiveEmail } = require('./src/utils/emailService'); // Ensure this path is correct
 
 const app = express();
-app.use(cors({ origin: "http://localhost:3000" }));
+app.use(cors());  // Allow requests from any origin during development
 app.use(express.json());
 
 // Connection URI
@@ -57,6 +57,7 @@ const RESERVATION_DURATION_HOURS = 1;
 const ADJ_QUEUE_WINDOW = 5;
 const ADJ_PARTY_AGE_LIMIT_MINUTES = 10;
 const TOTAL_CONSOLE_SLOTS = 2; // Added for console capacity
+const CHECK_IN_TIMEOUT_MINUTES = 10; // Time allowed for check-in
 // --- END CONFIGURATION ---
 
 // --- BEGIN SEATING ALGORITHM HELPER FUNCTIONS ---
@@ -112,6 +113,12 @@ function refreshFreeBlocks(seatState, topology) {
 }
 
 async function updateReservationToActive(db, partyId, assignedSeats, notes = "") {
+  // First get the reservation to check the user's role
+  const reservation = await db.collection("reservations").findOne({ _id: new ObjectId(partyId) });
+  if (!reservation) {
+    throw new Error("Reservation not found");
+  }
+
   const updateData = {
     status: "active",
     assignedPCs: assignedSeats,
@@ -119,6 +126,13 @@ async function updateReservationToActive(db, partyId, assignedSeats, notes = "")
     endTime: new Date(new Date().getTime() + RESERVATION_DURATION_HOURS * 60 * 60 * 1000),
     notes: notes || "Promoted from waitlist."
   };
+
+  // Only add check-in requirements for non-admin users
+  if (reservation.userRole !== 'ADMIN') {
+    updateData.needsCheckIn = true;
+    updateData.checkInDeadline = new Date(new Date().getTime() + CHECK_IN_TIMEOUT_MINUTES * 60 * 1000);
+  }
+
   await db.collection("reservations").updateOne({ _id: new ObjectId(partyId) }, { $set: updateData });
   console.log(`Reservation ${partyId} updated to active, assigned: ${assignedSeats.join(', ')}.`);
 }
@@ -335,7 +349,63 @@ async function triggerAllocationCycle(db) {
   }
   console.log("--- Allocation cycle finished --- MAX CYCLES OR NO MORE ALLOCATIONS ---");
 }
-// --- END SEATING ALGORITHM HELPER FUNCTIONS ---
+
+// Add new function to handle check-ins
+async function handleCheckIn(db, reservationId, adminEmail) {
+  const reservation = await db.collection("reservations").findOne({ _id: new ObjectId(reservationId) });
+  
+  if (!reservation) {
+    throw new Error("Reservation not found");
+  }
+  
+  if (!reservation.needsCheckIn) {
+    throw new Error("Reservation does not need check-in");
+  }
+  
+  if (new Date() > new Date(reservation.checkInDeadline)) {
+    // Delete the reservation if check-in deadline has passed
+    await db.collection("reservations").deleteOne({ _id: new ObjectId(reservationId) });
+    await triggerAllocationCycle(db);
+    throw new Error("Check-in deadline has passed. Reservation has been deleted.");
+  }
+  
+  await db.collection("reservations").updateOne(
+    { _id: new ObjectId(reservationId) },
+    { 
+      $set: { 
+        needsCheckIn: false,
+        checkedInBy: adminEmail,
+        checkedInAt: new Date()
+      }
+    }
+  );
+  
+  return { message: "Check-in successful" };
+}
+
+// Add new function to clean up expired check-ins
+async function cleanupExpiredCheckIns(db) {
+  try {
+    const now = new Date();
+    const expiredCheckIns = await db.collection("reservations").find({
+      status: "active",
+      needsCheckIn: true,
+      checkInDeadline: { $lt: now }
+    }).toArray();
+    
+    for (const reservation of expiredCheckIns) {
+      await db.collection("reservations").deleteOne({ _id: reservation._id });
+      console.log(`Deleted reservation ${reservation._id} due to expired check-in`);
+    }
+    
+    if (expiredCheckIns.length > 0) {
+      await triggerAllocationCycle(db);
+      console.log(`Cleaned up ${expiredCheckIns.length} expired check-ins`);
+    }
+  } catch (err) {
+    console.error("Error during check-in cleanup:", err);
+  }
+}
 
 async function connectToDatabase() {
   try {
@@ -509,29 +579,19 @@ app.post("/api/create/reservation", async (req, res) => {
     const db = client.db(dbName);
     const {
       name,
-      email, // Email of the person making the reservation
-      consoleType,
+      email,
       reservationType,
-      partySize: partySizeStr,
-      seatTogether, 
+      consoleType,
+      partySize,
+      seatTogether,
       preferredGame,
-      partyMembers // Add this to destructure partyMembers from request body
+      partyMembers,
+      userRole
     } = req.body;
 
     if (!email || !name || !reservationType) {
       console.error("[Reservation Create] Validation Error: Missing required fields: email, name, or reservationType");
       return res.status(400).json({ message: "Missing required fields: email, name, or reservationType" });
-    }
-
-    const partySize = reservationType === "PC" ? parseInt(partySizeStr, 10) : 1;
-
-    console.log(`[Reservation Create] Parsed Party Size: ${partySize}`);
-    console.log(`[Reservation Create] Requester Email: ${email}`);
-
-    // Validate that partyMembers includes the current user's email
-    if (partyMembers && !partyMembers.includes(email)) {
-      console.error("[Reservation Create] Validation Error: partyMembers must include the current user's email");
-      return res.status(400).json({ message: "partyMembers must include the current user's email" });
     }
 
     const reservationData = {
@@ -540,13 +600,12 @@ app.post("/api/create/reservation", async (req, res) => {
       reservationType,
       status: "waitlisted",
       createdAt: new Date(),
-      notes: "",
-      assignedPCs: [],
-      partySize,
-      seatTogether: reservationType === "PC" ? !!seatTogether : false,
-      preferredGame: reservationType === "PC" ? (preferredGame === "ANY" ? null : preferredGame) : null,
-      consoleType: reservationType === "CONSOLE" ? consoleType : null,
-      partyMembers: partyMembers || [email], // Use partyMembers from request if provided, otherwise default to just the current user
+      userRole,
+      ...(consoleType && { consoleType }),
+      ...(partySize && { partySize: parseInt(partySize) }),
+      ...(seatTogether !== undefined && { seatTogether }),
+      ...(preferredGame && { preferredGame }),
+      ...(partyMembers && { partyMembers })
     };
     
     if (reservationType === "PC") {
@@ -1260,6 +1319,43 @@ app.post('/api/queue/update', async (req, res) => {
     res.status(500).json({ message: 'Internal server error while updating queue.' });
   }
 });
+
+// Add check-in endpoint
+app.post("/api/reservations/check-in/:reservationId", async (req, res) => {
+  try {
+    const db = client.db(dbName);
+    const { reservationId } = req.params;
+    const { adminEmail } = req.body;
+
+    if (!ObjectId.isValid(reservationId)) {
+      return res.status(400).json({ message: "Invalid reservation ID format." });
+    }
+
+    if (!adminEmail) {
+      return res.status(400).json({ message: "Admin email is required for check-in." });
+    }
+
+    try {
+      const result = await handleCheckIn(db, reservationId, adminEmail);
+      res.json(result);
+    } catch (error) {
+      if (error.message.includes("deadline has passed")) {
+        return res.status(410).json({ message: error.message });
+      }
+      throw error;
+    }
+  } catch (err) {
+    console.error("Error during check-in:", err);
+    res.status(500).json({ message: err.message || "Internal Server Error" });
+  }
+});
+
+// Schedule cleanup tasks
+setInterval(async () => {
+  const db = client.db(dbName);
+  await cleanupExpiredReservations(db);
+  await cleanupExpiredCheckIns(db);
+}, 60000); // Run every minute
 
 async function startServer() {
   try {

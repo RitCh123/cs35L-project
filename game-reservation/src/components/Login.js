@@ -52,7 +52,7 @@ export default function Login() {
 
       try {
         const response = await axios.post(
-          "http://localhost:8080/api/create/user",
+          "/api/create/user",
           data
         );
         console.log("Reservation created:", response.data);
