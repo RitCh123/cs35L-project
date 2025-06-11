@@ -45,7 +45,7 @@
     "server": "nodemon server.js",
     "client": "npm start"
   },
-  "proxy": "https://gaming-lounge-reservation.vercel.app/",
+  "proxy": "https://eclipse-gaming-reservation.vercel.app/",
   "eslintConfig": {
     "extends": [
       "react-app",
