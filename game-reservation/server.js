@@ -6,13 +6,14 @@ const nodemailer = require("nodemailer");
 const path = require('path');
 
 // Serve frontend static files (after build)
-app.use(express.static(path.join(__dirname, 'build')));
+
 
 const { sendQueueNotification, sendWaitlistConfirmationEmail, sendReservationActiveEmail } = require('./src/utils/emailService'); // Ensure this path is correct
 
 const app = express();
 app.use(cors());  // Allow requests from any origin during development
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'build')));
 
 // Connection URI
 const uri = `mongodb+srv://nks676:${process.env.DB_PASSWORD}@eggert.a6kxlho.mongodb.net/?retryWrites=true&w=majority&appName=Eggert`;
