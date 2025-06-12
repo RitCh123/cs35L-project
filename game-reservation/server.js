@@ -776,7 +776,11 @@ app.delete("/api/delete/reservation", async (req, res) => {
 app.get("/api/view/profiles", async (req, res) => {
   try {
     const db = client.db(dbName);
-    const profiles = await db.collection("profiles").find({ openToFriends: true }).toArray();
+    // Explicitly convert openToFriends to boolean in query
+    const profiles = await db.collection("profiles").find({
+      openToFriends: { $eq: true }
+    }).toArray();
+    
     res.json(profiles);
   } catch (err) {
     console.error("Error fetching profiles:", err);
@@ -791,10 +795,29 @@ app.get("/api/view/profile", async (req, res) => {
     if (!email) {
       return res.status(400).json({ message: "Missing email query parameter" });
     }
-    const profile = await db.collection("profiles").findOne({ email });
+
+    let profile = await db.collection("profiles").findOne({ email });
+
     if (!profile) {
-      return res.status(404).json({ message: "Profile not found" });
+      const defaultProfile = {
+        email,
+        name: email.split('@')[0],
+        openToFriends: false,  // Explicitly set as boolean
+        game: '',
+        mode: '',
+        time: '',
+        playStyle: 'Casual',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const result = await db.collection("profiles").insertOne(defaultProfile);
+      profile = { ...defaultProfile, _id: result.insertedId };
+    } else {
+      // Ensure openToFriends is boolean
+      profile.openToFriends = Boolean(profile.openToFriends);
     }
+
     res.json(profile);
   } catch (err) {
     console.error("Error fetching profile:", err);
@@ -845,13 +868,44 @@ app.post("/api/update/profile/friends", async (req, res) => {
       return res.status(400).json({ message: "Missing email or openToFriends status" });
     }
 
-    await db.collection("profiles").updateOne(
-      { email },
-      { $set: { openToFriends } },
-      { upsert: true }
-    );
+    // Convert openToFriends to boolean explicitly
+    const visibilityValue = Boolean(openToFriends);
+    
+    // First, ensure the profile exists
+    let profile = await db.collection("profiles").findOne({ email });
+    
+    if (!profile) {
+      profile = {
+        email,
+        name: email.split('@')[0],
+        openToFriends: visibilityValue,
+        game: '',
+        mode: '',
+        time: '',
+        playStyle: 'Casual',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      await db.collection("profiles").insertOne(profile);
+    } else {
+      const updateResult = await db.collection("profiles").updateOne(
+        { email },
+        { 
+          $set: { 
+            openToFriends: visibilityValue,
+            updatedAt: new Date()
+          }
+        }
+      );
+      
+      // Fetch the updated profile
+      profile = await db.collection("profiles").findOne({ email });
+    }
 
-    res.json({ message: "Friends preference updated successfully" });
+    res.json({ 
+      message: "Friends preference updated successfully",
+      profile: profile
+    });
   } catch (err) {
     console.error("Error updating friends preference:", err);
     res.status(500).send("Internal Server Error");
@@ -982,7 +1036,25 @@ app.get('/api/friends/requests', async (req, res) => {
       .sort({ createdAt: -1 })
       .toArray();
 
-    res.status(200).json(requests);
+    // Get profile information for each sender
+    const senderEmails = requests.map(req => req.sender);
+    const senderProfiles = await db.collection("profiles")
+      .find({ email: { $in: senderEmails } })
+      .toArray();
+
+    // Create a map of email to profile for easy lookup
+    const profileMap = senderProfiles.reduce((map, profile) => {
+      map[profile.email] = profile;
+      return map;
+    }, {});
+
+    // Add profile information to each request
+    const requestsWithProfiles = requests.map(request => ({
+      ...request,
+      senderProfile: profileMap[request.sender] || null
+    }));
+
+    res.status(200).json(requestsWithProfiles);
   } catch (error) {
     console.error('Error fetching friend requests:', error);
     res.status(500).json({ 
@@ -1186,6 +1258,39 @@ app.get('/api/friends/sent', async (req, res) => {
     console.error('Error fetching sent friend requests:', error);
     res.status(500).json({ 
       message: 'Error fetching sent friend requests',
+      error: error.message 
+    });
+  }
+});
+
+// Add endpoint to remove a friend
+app.post('/api/friends/remove', async (req, res) => {
+  try {
+    const { userEmail, friendEmail } = req.body;
+    
+    if (!userEmail || !friendEmail) {
+      return res.status(400).json({ message: 'Both userEmail and friendEmail are required' });
+    }
+
+    const db = client.db(dbName);
+    
+    // Remove the friend relationship by updating both accepted requests
+    const result = await db.collection("friend_requests").deleteMany({
+      $or: [
+        { sender: userEmail, recipient: friendEmail, status: "accepted" },
+        { sender: friendEmail, recipient: userEmail, status: "accepted" }
+      ]
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: 'Friend relationship not found' });
+    }
+
+    res.status(200).json({ message: 'Friend removed successfully' });
+  } catch (error) {
+    console.error('Error removing friend:', error);
+    res.status(500).json({ 
+      message: 'Error removing friend',
       error: error.message 
     });
   }

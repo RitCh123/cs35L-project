@@ -39,6 +39,9 @@ export default function Friends() {
   // Add new state for handling request actions
   const [processingRequest, setProcessingRequest] = useState(false);
 
+  // Add new state for handling friend removal
+  const [processingFriendAction, setProcessingFriendAction] = useState(false);
+
   // Effect for initial data loading and setting current user's preferences
   useEffect(() => {
     const loadData = async () => {
@@ -49,23 +52,30 @@ export default function Friends() {
         return;
       }
       try {
+        console.log('[Friends] Loading initial data for', currentUser.email);
+        
+        // First fetch or create the user's profile
+        const userProfileRes = await axios.get(`/api/view/profile?email=${currentUser.email}`);
+        console.log('[Friends] User profile response:', userProfileRes.data);
+        
+        // Explicitly handle the visibility state
+        const visibility = userProfileRes.data?.openToFriends === true;
+        console.log('[Friends] Setting initial visibility to:', visibility);
+        setOpenToFriends(visibility);
+
+        // Then fetch all visible profiles
         const res = await axios.get("/api/view/profiles");
+        console.log('[Friends] Fetched visible profiles:', res.data);
+        
         let allProfiles = res.data.map(p => ({
-            ...p, 
-            playStyle: p.playStyle || 'Casual' 
+          ...p,
+          playStyle: p.playStyle || 'Casual',
+          openToFriends: p.openToFriends === true
         }));
         setProfiles(allProfiles);
-
-        const currentUserProfile = res.data.find(p => p.email === currentUser.email);
-        if (currentUserProfile) {
-          setOpenToFriends(!!currentUserProfile.openToFriends);
-        } else {
-          setOpenToFriends(false);
-        }
       } catch (err) {
-        console.error("Error fetching initial data:", err);
-        setProfiles([]); 
-        setOpenToFriends(false);
+        console.error("[Friends] Error fetching initial data:", err);
+        setProfiles([]);
       }
     };
 
@@ -96,34 +106,51 @@ export default function Friends() {
   const refreshProfileListFromServer = async () => {
     if (!currentUser) return;
     try {
+      console.log('[Friends] Refreshing profile list');
       const res = await axios.get("/api/view/profiles");
       let refreshedProfiles = res.data.map(p => ({
-          ...p, 
-          playStyle: p.playStyle || 'Casual' 
+        ...p,
+        playStyle: p.playStyle || 'Casual',
+        openToFriends: p.openToFriends === true
       }));
-      setProfiles(refreshedProfiles); 
+      setProfiles(refreshedProfiles);
+      console.log('[Friends] Profile list refreshed');
     } catch (err) {
-      console.error("Error refreshing profile list:", err);
+      console.error("[Friends] Error refreshing profile list:", err);
     }
   };
 
   const handleToggleFriends = async () => {
     if (!currentUser) return;
     
-    const previousOpenToFriends = openToFriends;
     const newValue = !openToFriends;
+    console.log('[Friends] Toggling visibility to:', newValue);
     
-    setOpenToFriends(newValue);
-
     try {
-      await axios.post("/api/update/profile/friends", {
+      // First update the UI optimistically
+      setOpenToFriends(newValue);
+
+      // Then update the server with explicit boolean
+      const response = await axios.post("/api/update/profile/friends", {
         email: currentUser.email,
-        openToFriends: newValue
+        openToFriends: Boolean(newValue)
       });
+
+      console.log('[Friends] Toggle response:', response.data);
+
+      // Verify the server state matches our local state
+      const serverVisibility = response.data.profile?.openToFriends === true;
+      if (serverVisibility !== newValue) {
+        console.log('[Friends] Server state mismatch, reverting to:', serverVisibility);
+        setOpenToFriends(serverVisibility);
+      }
+
+      // Refresh the profile list
       await refreshProfileListFromServer();
     } catch (err) {
-      console.error("Error updating friends preference:", err);
-      setOpenToFriends(previousOpenToFriends);
+      // If there's an error, revert the UI
+      console.error("[Friends] Error updating visibility:", err);
+      setOpenToFriends(!newValue);
     }
   };
 
@@ -319,10 +346,32 @@ export default function Friends() {
     return 'none';
   };
 
+  // Add function to handle friend removal
+  const handleRemoveFriend = async (friendEmail) => {
+    if (!currentUser || processingFriendAction) return;
+    
+    setProcessingFriendAction(true);
+    try {
+      const response = await axios.post('/api/friends/remove', {
+        userEmail: currentUser.email,
+        friendEmail: friendEmail
+      });
+      
+      if (response.status === 200) {
+        // Refresh the friends list
+        await refreshAcceptedFriends();
+      }
+    } catch (error) {
+      console.error('Error removing friend:', error);
+    } finally {
+      setProcessingFriendAction(false);
+    }
+  };
+
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex-1 flex items-center">
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <Link to="/">
             <Button
               isIconOnly
@@ -344,198 +393,40 @@ export default function Friends() {
               </svg>
             </Button>
           </Link>
+          <h1 style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>Friends</h1>
         </div>
-        <div className="flex-1 flex justify-center">
-          <h1 className="text-2xl font-bold">Find Friends</h1>
-        </div>
-        <div className="flex-1 flex items-center justify-end gap-3">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <Button
             color="primary"
             variant="solid"
             onPress={onOpenProfile}
           >
-            Profile
+            Edit Profile
           </Button>
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium">Open to Friends</span>
-            <Switch
-              checked={openToFriends}
-              onChange={handleToggleFriends}
-              color="primary"
-            />
-          </div>
+          <Card style={{ padding: '0.5rem 1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <span style={{ fontSize: '0.875rem', color: 'var(--nextui-colors-accents6)' }}>Profile Visibility</span>
+                <span style={{ fontSize: '0.75rem', color: openToFriends ? 'var(--nextui-colors-success)' : 'var(--nextui-colors-accents5)' }}>
+                  {openToFriends ? 'Visible to Others' : 'Private Profile'}
+                </span>
+              </div>
+              <Switch
+                checked={openToFriends}
+                onChange={handleToggleFriends}
+                color="success"
+                size="lg"
+              />
+            </div>
+          </Card>
         </div>
       </div>
-      
-      <div style={{ marginTop: '3rem' }}>
-        {/* Friend Requests Section */}
-        {currentUser && (
-          <div className="mb-8">
-            <Accordion>
-              <AccordionItem
-                key="friend-requests"
-                aria-label="Friend Requests"
-                title={
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-2">
-                      <span>Friend Requests</span>
-                      {pendingRequests.length > 0 && (
-                        <Badge color="primary" variant="flat" size="sm">
-                          {pendingRequests.length}
-                        </Badge>
-                      )}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="light"
-                      isIconOnly
-                      onPress={refreshPendingRequests}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M23 4V10H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M1 20V14H7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M3.51 9.00001C3.98 7.44001 4.85 6.06001 6.03 5.00001C7.21 3.94001 8.66 3.24001 10.2 2.98001C11.74 2.72001 13.32 2.91001 14.76 3.53001C16.2 4.15001 17.44 5.17001 18.33 6.48001L23 10M1 14L5.67 17.52C6.56 18.83 7.8 19.85 9.24 20.47C10.68 21.09 12.26 21.28 13.8 21.02C15.34 20.76 16.79 20.06 17.97 19C19.15 17.94 20.02 16.56 20.49 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </Button>
-                  </div>
-                }
-              >
-                <Card>
-                  <CardBody>
-                    {isLoadingRequests ? (
-                      <div className="flex justify-center p-4">
-                        <p>Loading requests...</p>
-                      </div>
-                    ) : pendingRequests.length === 0 ? (
-                      <div className="text-center p-4 text-default-500">
-                        No pending friend requests
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {pendingRequests.map((request) => (
-                          <div key={request._id} className="flex items-center justify-between p-4 border rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <Avatar
-                                name={request.sender.split('@')[0]}
-                                size="md"
-                                radius="full"
-                                color="primary"
-                              />
-                              <div>
-                                <p className="font-semibold">{request.sender}</p>
-                                <p className="text-sm text-default-500">
-                                  Sent {new Date(request.createdAt).toLocaleDateString()}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                color="success"
-                                variant="flat"
-                                size="sm"
-                                onPress={() => handleAcceptRequest(request._id)}
-                                isDisabled={processingRequest}
-                              >
-                                Accept
-                              </Button>
-                              <Button
-                                color="danger"
-                                variant="flat"
-                                size="sm"
-                                onPress={() => handleRejectRequest(request._id)}
-                                isDisabled={processingRequest}
-                              >
-                                Reject
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardBody>
-                </Card>
-              </AccordionItem>
 
-              {/* New Accepted Friends AccordionItem */}
-              <AccordionItem
-                key="accepted-friends"
-                aria-label="Friends List"
-                title={
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-2">
-                      <span>Friends List:</span>
-                      {acceptedFriends.length > 0 && (
-                        <Badge color="success" variant="flat" size="sm">
-                          {acceptedFriends.length}
-                        </Badge>
-                      )}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="light"
-                      isIconOnly
-                      onPress={refreshAcceptedFriends}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M23 4V10H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M1 20V14H7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M3.51 9.00001C3.98 7.44001 4.85 6.06001 6.03 5.00001C7.21 3.94001 8.66 3.24001 10.2 2.98001C11.74 2.72001 13.32 2.91001 14.76 3.53001C16.2 4.15001 17.44 5.17001 18.33 6.48001L23 10M1 14L5.67 17.52C6.56 18.83 7.8 19.85 9.24 20.47C10.68 21.09 12.26 21.28 13.8 21.02C15.34 20.76 16.79 20.06 17.97 19C19.15 17.94 20.02 16.56 20.49 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </Button>
-                  </div>
-                }
-              >
-                <Card>
-                  <CardBody>
-                    {isLoadingFriends ? (
-                      <div className="flex justify-center p-4">
-                        <p>Loading friends...</p>
-                      </div>
-                    ) : acceptedFriends.length === 0 ? (
-                      <div className="text-center p-4 text-default-500">
-                        No accepted friends yet
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {acceptedFriends.map((friend) => (
-                          <div key={friend.email} className="flex items-center justify-between p-4 border rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <Avatar
-                                name={friend.profile?.name || friend.email.split('@')[0]}
-                                size="md"
-                                radius="full"
-                                color="success"
-                              />
-                              <div>
-                                <p className="font-semibold">{friend.profile?.name || friend.email.split('@')[0]}</p>
-                                <p className="text-sm text-default-500">{friend.email}</p>
-                                {friend.profile && (
-                                  <div className="flex gap-2 mt-1">
-                                    <Badge color="primary" variant="flat" size="sm">
-                                      {friend.profile.game || 'No game'}
-                                    </Badge>
-                                    <Badge color="secondary" variant="flat" size="sm">
-                                      {friend.profile.playStyle || 'Casual'}
-                                    </Badge>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardBody>
-                </Card>
-              </AccordionItem>
-            </Accordion>
-          </div>
-        )}
-
-        <div className="mb-4" style={{ marginBottom: '2rem' }}>
+      <Card style={{ marginBottom: '2rem' }}>
+        <CardBody>
           <Input
             type="text"
-            placeholder="Search by name, email, game, mode, play style, etc."
+            placeholder="Search friends by name, game, or play style..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             variant="bordered"
@@ -554,128 +445,261 @@ export default function Friends() {
                 strokeWidth="2"
                 viewBox="0 0 24 24"
                 width="1em"
-                className="text-default-400"
+                style={{ color: 'var(--nextui-colors-accents6)' }}
               >
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.35-4.35" />
               </svg>
             }
           />
+        </CardBody>
+      </Card>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '2rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <Card>
+            <CardBody style={{ padding: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>Friend Requests</h2>
+                <Badge color="primary" variant="flat" size="sm">
+                  {pendingRequests.length}
+                </Badge>
+              </div>
+              {isLoadingRequests ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem' }}>
+                  <p>Loading requests...</p>
+                </div>
+              ) : pendingRequests.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--nextui-colors-accents6)' }}>
+                  No pending requests
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {pendingRequests.map((request) => (
+                    <Card key={request._id} variant="flat">
+                      <CardBody style={{ padding: '1rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Avatar
+                              name={request.senderProfile?.name || request.sender}
+                              size="sm"
+                              radius="full"
+                              color="primary"
+                            />
+                            <div>
+                              <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>
+                                {request.senderProfile?.name || 'Unknown User'}
+                              </span>
+                              <p style={{ fontSize: '0.75rem', color: 'var(--nextui-colors-accents6)', margin: '0' }}>
+                                {request.sender}
+                              </p>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <Button
+                              color="success"
+                              variant="flat"
+                              size="sm"
+                              onPress={() => handleAcceptRequest(request._id)}
+                              isDisabled={processingRequest}
+                              fullWidth
+                            >
+                              Accept
+                            </Button>
+                            <Button
+                              color="danger"
+                              variant="flat"
+                              size="sm"
+                              onPress={() => handleRejectRequest(request._id)}
+                              isDisabled={processingRequest}
+                              fullWidth
+                            >
+                              Decline
+                            </Button>
+                          </div>
+                        </div>
+                      </CardBody>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardBody style={{ padding: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>My Friends</h2>
+                <Badge color="success" variant="flat" size="sm">
+                  {acceptedFriends.length}
+                </Badge>
+              </div>
+              {isLoadingFriends ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem' }}>
+                  <p>Loading friends...</p>
+                </div>
+              ) : acceptedFriends.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--nextui-colors-accents6)' }}>
+                  No friends yet
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {acceptedFriends.map((friend) => (
+                    <Card key={friend.email} variant="flat">
+                      <CardBody style={{ padding: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <Avatar
+                              name={friend.profile?.name}
+                              size="md"
+                              radius="full"
+                              color="success"
+                            />
+                            <div style={{ flex: 1 }}>
+                              <p style={{ fontWeight: '500', margin: 0 }}>{friend.profile?.name || 'Unknown User'}</p>
+                              <p style={{ fontSize: '0.75rem', color: 'var(--nextui-colors-accents6)', margin: '0.25rem 0 0 0' }}>
+                                {friend.email}
+                              </p>
+                              {friend.profile && (
+                                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                                  <Badge color="primary" variant="flat" size="sm">
+                                    {friend.profile.game || 'No game'}
+                                  </Badge>
+                                  <Badge color="secondary" variant="flat" size="sm">
+                                    {friend.profile.playStyle || 'Casual'}
+                                  </Badge>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            color="danger"
+                            variant="light"
+                            size="sm"
+                            isIconOnly
+                            onPress={() => handleRemoveFriend(friend.email)}
+                            isDisabled={processingFriendAction}
+                            style={{ minWidth: '32px', height: '32px' }}
+                          >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </Button>
+                        </div>
+                      </CardBody>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
         </div>
 
-        <div style={{ marginBottom: '2rem' }}>
-          <Table aria-label="Friends list">
-            <TableHeader>
-              <TableColumn>Player</TableColumn>
-              <TableColumn>Contact</TableColumn>
-              <TableColumn>Game Details</TableColumn>
-              <TableColumn>Availability</TableColumn>
-              <TableColumn>Action</TableColumn>
-            </TableHeader>
-            <TableBody>
-              {filteredProfiles.map((profile) => (
-                <TableRow key={profile._id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar
-                        name={profile.name}
-                        size="md"
-                        radius="full"
-                        color="primary"
-                      />
-                      <div>
-                        <p className="text-lg font-semibold">{profile.name}</p>
-                        <Chip
-                          size="sm"
-                          variant="flat"
-                          color={profile.playStyle === 'Competitive' ? 'danger' : 'success'}
-                        >
-                          {profile.playStyle || 'Casual'}
-                        </Chip>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Tooltip content="Send email">
-                      <div className="cursor-pointer">
-                        <p className="text-sm text-default-500">{profile.email}</p>
-                      </div>
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-2">
-                      <Badge color="primary" variant="flat" size="sm">
-                        {profile.game || 'N/A'}
-                      </Badge>
-                      <Badge color="secondary" variant="flat" size="sm">
-                        {profile.mode || 'N/A'}
-                      </Badge>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      size="sm"
-                      variant="dot"
-                      color={profile.time ? 'success' : 'default'}
-                    >
-                      {profile.time || 'Not specified'}
-                    </Chip>
-                  </TableCell>
-                  <TableCell>
-                    {(() => {
-                      const status = getRequestStatus(profile._id);
-                      if (status === 'friends') {
-                        return (
-                          <Button
-                            color="success"
-                            variant="flat"
-                            isDisabled
-                            startContent={<CheckIcon />}
-                          >
-                            Friends
-                          </Button>
-                        );
-                      }
-                      if (status === 'sent') {
-                        return (
-                          <Button
-                            color="default"
-                            variant="flat"
-                            isDisabled
-                            startContent={<CheckIcon />}
-                          >
-                            Request Sent
-                          </Button>
-                        );
-                      }
-                      if (status === 'received') {
-                        return (
-                          <Button
-                            color="warning"
-                            variant="flat"
-                            onPress={() => handleAcceptRequest(pendingRequests.find(req => req.senderProfileId === profile._id)?._id)}
-                          >
-                            Respond to Request
-                          </Button>
-                        );
-                      }
-                      return (
-                        <Button
+        <Card>
+          <CardBody>
+            <Table aria-label="Available Players">
+              <TableHeader>
+                <TableColumn>Player</TableColumn>
+                <TableColumn>Game Details</TableColumn>
+                <TableColumn>Availability</TableColumn>
+                <TableColumn>Action</TableColumn>
+              </TableHeader>
+              <TableBody>
+                {filteredProfiles.map((profile) => (
+                  <TableRow key={profile._id}>
+                    <TableCell>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <Avatar
+                          name={profile.name}
+                          size="md"
+                          radius="full"
                           color="primary"
-                          variant="solid"
-                          onPress={() => openMessageModal(profile._id)}
-                          startContent={<AddFriendIcon />}
-                        >
-                          Friend
-                        </Button>
-                      );
-                    })()}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                        />
+                        <div>
+                          <p style={{ fontSize: '1rem', fontWeight: '500', margin: 0 }}>{profile.name}</p>
+                          <p style={{ fontSize: '0.875rem', color: 'var(--nextui-colors-accents6)', margin: 0 }}>{profile.email}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <Badge color="primary" variant="flat" size="sm">
+                          {profile.game || 'No game'}
+                        </Badge>
+                        <Badge color="secondary" variant="flat" size="sm">
+                          {profile.playStyle || 'Casual'}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        size="sm"
+                        variant="dot"
+                        color={profile.time ? 'success' : 'default'}
+                      >
+                        {profile.time || 'Not specified'}
+                      </Chip>
+                    </TableCell>
+                    <TableCell>
+                      {(() => {
+                        const status = getRequestStatus(profile._id);
+                        if (status === 'friends') {
+                          return (
+                            <Button
+                              color="success"
+                              variant="flat"
+                              isDisabled
+                              startContent={<CheckIcon />}
+                              fullWidth
+                            >
+                              Friends
+                            </Button>
+                          );
+                        }
+                        if (status === 'sent') {
+                          return (
+                            <Button
+                              color="default"
+                              variant="flat"
+                              isDisabled
+                              startContent={<CheckIcon />}
+                              fullWidth
+                            >
+                              Request Sent
+                            </Button>
+                          );
+                        }
+                        if (status === 'received') {
+                          return (
+                            <Button
+                              color="warning"
+                              variant="flat"
+                              onPress={() => handleAcceptRequest(pendingRequests.find(req => req.senderProfileId === profile._id)?._id)}
+                              fullWidth
+                            >
+                              Respond
+                            </Button>
+                          );
+                        }
+                        return (
+                          <Button
+                            color="primary"
+                            variant="solid"
+                            onPress={() => openMessageModal(profile._id)}
+                            startContent={<AddFriendIcon />}
+                            fullWidth
+                          >
+                            Add Friend
+                          </Button>
+                        );
+                      })()}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardBody>
+        </Card>
       </div>
 
       <Modal 
