@@ -5,6 +5,7 @@ import './index.css';
 import App from './App';
 import Login from './components/Login';
 import Friends from './pages/Friends';
+import FindPlayers from './pages/FindPlayers';
 
 import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider } from './firebase/AuthContext';
@@ -19,7 +20,14 @@ root.render(
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
-
+          <Route
+            path="/find-players"
+            element={
+              <PrivateRoute>
+                <FindPlayers />
+              </PrivateRoute>
+            }
+          />
           <Route
             path="/friends"
             element={

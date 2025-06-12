@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   CardBody,
@@ -11,6 +11,7 @@ import {
 } from "@heroui/react";
 import axios from 'axios';
 import CheckInTimer from './CheckInTimer';
+import { calculateWaitTime, formatWaitTime } from '../utils/waitTimeCalculator';
 
 // UCLA-themed placeholder names
 const placeholderNames = [
@@ -51,6 +52,18 @@ const DisplayTypeStation = ({
 }) => {
   const [showTimer, setShowTimer] = useState(false);
   const [currentTimerReservation, setCurrentTimerReservation] = useState(null);
+  const [estimatedWaitTime, setEstimatedWaitTime] = useState("Calculating...");
+
+  // Calculate wait time whenever reservations change
+  useEffect(() => {
+    const waitTimeMs = calculateWaitTime(
+      activeReservations,
+      waitlistedReservations,
+      maxCount,
+      stationType
+    );
+    setEstimatedWaitTime(formatWaitTime(waitTimeMs));
+  }, [activeReservations, waitlistedReservations, maxCount, stationType]);
 
   // Function to check if user can see full details
   const canSeeFullDetails = (reservation) => {
@@ -127,15 +140,21 @@ const DisplayTypeStation = ({
 
       <Card className="flex-1">
         <CardHeader style={{ padding: '1.5rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#4338ca' }}>{title}</h2>
-            <div>
-              <Chip color="success" size="md">
-                Available {stationType}s: {availableSlots} / {maxCount}
-              </Chip>
-              <Chip color="warning" size="md" style={{ marginLeft: '0.5rem' }}>
-                {stationType} Waitlist: {waitlistCount}
-              </Chip>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#4338ca' }}>{title}</h2>
+              <div>
+                <Chip color="success" size="md">
+                  Available {stationType}s: {availableSlots} / {maxCount}
+                </Chip>
+                <Chip color="warning" size="md" style={{ marginLeft: '0.5rem' }}>
+                  {stationType} Waitlist: {waitlistCount}
+                </Chip>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-small font-semibold">Estimated Wait:</p>
+              <p className="text-small text-default-500">{estimatedWaitTime}</p>
             </div>
           </div>
         </CardHeader>

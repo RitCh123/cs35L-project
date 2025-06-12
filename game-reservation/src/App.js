@@ -187,6 +187,9 @@ function AppContent() {
                 <Button as={RouterLink} to="/friends" color="secondary" variant="ghost">
                   Friends
                 </Button>
+                <Button as={RouterLink} to="/find-players" color="secondary" variant="ghost">
+                  Find Players
+                </Button>
                 <Button
                   color="danger"
                   variant="ghost"

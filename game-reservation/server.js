@@ -1519,3 +1519,74 @@ async function startServer() {
 }
 
 startServer();
+
+// Add this near your other route handlers
+app.get('/api/players/similar', async (req, res) => {
+  try {
+    const { email, game, playStyle } = req.query;
+    
+    // Get the current user's profile
+    const userProfile = await Profile.findOne({ email });
+    if (!userProfile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    // Build the matching query
+    let query = { email: { $ne: email } }; // Exclude current user
+
+    if (game && game !== "ALL") {
+      query.favoriteGames = game;
+    }
+    
+    if (playStyle && playStyle !== "ALL") {
+      query.playStyle = playStyle;
+    }
+
+    // Find other profiles that match the criteria
+    const profiles = await Profile.find(query);
+
+    // Calculate match percentage for each profile
+    const similarPlayers = profiles.map(profile => {
+      let matchScore = 0;
+      let totalFactors = 0;
+
+      // Match based on play style
+      if (profile.playStyle === userProfile.playStyle) {
+        matchScore += 1;
+      }
+      totalFactors += 1;
+
+      // Match based on preferred platform
+      if (profile.preferredPlatform === userProfile.preferredPlatform) {
+        matchScore += 1;
+      }
+      totalFactors += 1;
+
+      // Match based on common games
+      const userGames = new Set(userProfile.favoriteGames || []);
+      const profileGames = new Set(profile.favoriteGames || []);
+      const commonGames = [...userGames].filter(game => profileGames.has(game));
+      
+      if (userGames.size > 0 && profileGames.size > 0) {
+        matchScore += (commonGames.length / Math.max(userGames.size, profileGames.size));
+        totalFactors += 1;
+      }
+
+      // Calculate final match percentage
+      const matchPercentage = totalFactors > 0 ? matchScore / totalFactors : 0;
+
+      return {
+        ...profile.toObject(),
+        matchPercentage
+      };
+    });
+
+    // Sort by match percentage (highest first)
+    similarPlayers.sort((a, b) => b.matchPercentage - a.matchPercentage);
+
+    res.json(similarPlayers);
+  } catch (error) {
+    console.error('Error finding similar players:', error);
+    res.status(500).json({ message: "Error finding similar players" });
+  }
+});
